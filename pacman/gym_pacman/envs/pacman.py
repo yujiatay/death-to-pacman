@@ -97,6 +97,7 @@ class GameState:
         # Copy current state
         state = GameState(self)
 
+        reward = 0
         # Let agent's logic deal with its action's effects on the board
         if agentIndex == 0:  # Pacman is moving
             state.data._eaten = [False for i in range(state.getNumAgents())]
@@ -113,12 +114,17 @@ class GameState:
         # Resolve multi-agent effects
         GhostRules.checkDeath( state, agentIndex )
 
+        if agentIndex == 0:
+            rew = state.data.scoreChange
+        else:
+            rew = -state.data.scoreChange
+
         # Book keeping
         state.data._agentMoved = agentIndex
         state.data.score += state.data.scoreChange
         GameState.explored.add(self)
         GameState.explored.add(state)
-        return state
+        return state, rew
 
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
@@ -335,8 +341,11 @@ class PacmanRules:
         Edits the state to reflect the results of the action.
         """
         legal = PacmanRules.getLegalActions( state )
+        # print("Legal moves for pacman: ", legal)
         if action not in legal:
-            raise Exception("Illegal action " + str(action))
+            # raise Exception("Illegal action " + str(action))
+            print("Illegal action " + str(action) + " so changing to stop instead.")
+            action = Directions.STOP
 
         pacmanState = state.data.agentStates[0]
 
@@ -385,7 +394,12 @@ class GhostRules:
         reach a dead end, but can turn 90 degrees at intersections.
         """
         conf = state.getGhostState( ghostIndex ).configuration
+        # print("GHOST ", ghostIndex, " ", conf)
         possibleActions = Actions.getPossibleActions( conf, state.data.layout.walls )
+        # Remove the illegal STOP from possibleActions
+        if Directions.STOP in possibleActions:
+            possibleActions.remove(Directions.STOP)
+        # print("GHOST ", ghostIndex, "'s possible actions", possibleActions)
         reverse = Actions.reverseDirection( conf.direction )
         if reverse in possibleActions and len( possibleActions ) > 1:
             possibleActions.remove( reverse )

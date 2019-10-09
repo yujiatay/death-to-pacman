@@ -112,7 +112,7 @@ def q_train(make_obs_ph_n, act_space_n, q_index, q_func, optimizer, grad_norm_cl
 class MADDPGAgentTrainer(AgentTrainer):
     def __init__(self, name, model, obs_shape_n, act_space_n, agent_index, args, local_q_func=False):
         self.name = name
-        self.n = len(obs_shape_n)
+        self.n = len(obs_shape_n)  # 16
         self.agent_index = agent_index
         self.args = args
         obs_ph_n = []
@@ -125,10 +125,10 @@ class MADDPGAgentTrainer(AgentTrainer):
             make_obs_ph_n=obs_ph_n,
             act_space_n=act_space_n,
             q_index=agent_index,
-            q_func=model,
+            q_func=model,  # multi-layer perceptron
             optimizer=tf.train.AdamOptimizer(learning_rate=args.lr),
             grad_norm_clipping=0.5,
-            local_q_func=local_q_func,
+            local_q_func=local_q_func,  # maddpg or ddpg
             num_units=args.num_units
         )
         self.act, self.p_train, self.p_update, self.p_debug = p_train(

@@ -47,6 +47,7 @@ def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=Non
 
 def make_env(scenario_name, arglist, benchmark=False):
     from multiagent.environment import MultiAgentEnv
+    from pacman.gym_pacman.envs.pacman_env import PacmanEnv
     import multiagent.scenarios as scenarios
 
     # load scenario from script
@@ -58,6 +59,9 @@ def make_env(scenario_name, arglist, benchmark=False):
         env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation, scenario.benchmark_data)
     else:
         env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
+
+    env = PacmanEnv()
+    env.seed(1)
     return env
 
 def get_trainers(env, num_adversaries, obs_shape_n, arglist):
@@ -111,13 +115,20 @@ def train(arglist):
             # get action
             action_n = [agent.action(obs) for agent, obs in zip(trainers,obs_n)]
             # environment step
-            new_obs_n, rew_n, done_n, info_n = env.step(action_n)
+            new_obs_n, rew_n, done, info_n = env.step(action_n)
+            env.render()
             episode_step += 1
-            done = all(done_n)
+            # done = all(done_n)
             terminal = (episode_step >= arglist.max_episode_len)
             # collect experience
+            # print("obs_n", obs_n)
+            # print("action_n", action_n)
+            print("rew_n", rew_n)
+            # print("done", done)
+            # print("terminal", terminal)
             for i, agent in enumerate(trainers):
-                agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done_n[i], terminal)
+                # agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done_n[i], terminal)
+                agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done, terminal)
             obs_n = new_obs_n
 
             for i, rew in enumerate(rew_n):
