@@ -322,6 +322,7 @@ class Scenario(BaseScenario):
         entity_pos_x = []
         entity_pos_y = []
         entity_size = []
+        coin_collected = []
         #Should add if the coins is collected anot.
         for entity in world.entities:
             #if not entity.boundary and not entity.movable:
@@ -330,7 +331,10 @@ class Scenario(BaseScenario):
                 # also
                 entity_pos_x.append([entity.state.p_pos[0] - agent.state.p_pos[0]])
                 entity_pos_y.append([entity.state.p_pos[1] - agent.state.p_pos[1]])
-                entity_size.append([entity.hor,entity.vert])
+                if 'landmark' in entity.name:
+                    entity_size.append([entity.hor,entity.vert])
+                if 'coin' in entity.name:
+                    coin_collected.append([entity.state.collected])
         # communication of all other agents
         comm = []
         other_pos = []
@@ -343,5 +347,6 @@ class Scenario(BaseScenario):
                 other_vel.append(other.state.p_vel)
 
 
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos_x + entity_pos_y + entity_size+
+        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos_x +
+                              entity_pos_y + entity_size+ coin_collected +
                               other_pos +  other_vel)
