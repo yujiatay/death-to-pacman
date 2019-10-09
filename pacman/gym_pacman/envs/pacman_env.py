@@ -123,7 +123,8 @@ class PacmanEnv(gym.Env):
                 c_action_space = spaces.Discrete(self.world['dim_c'])
             else:
                 c_action_space = spaces.Box(low=0.0, high=1.0, shape=(2,), dtype=np.float32)
-            total_action_space.append(c_action_space)
+            # if not agent.silent:
+            #     total_action_space.append(c_action_space)
             # total action space
             if len(total_action_space) > 1:
                 # all action spaces are discrete, so simplify to MultiDiscrete action space
@@ -137,7 +138,7 @@ class PacmanEnv(gym.Env):
             # observation space
             obs_dim = len(self.observation(i,  self.game.state.data.agentStates))
             self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,), dtype=np.float32))
-            # agent.action.c = np.zeros(self.world.dim_c)
+            # agent.action.c = np.zeros(self.world['dim_c'])
 
 
 
