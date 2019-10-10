@@ -98,7 +98,7 @@ def train(arglist):
         # Load previous results, if necessary
         if arglist.load_dir == "":
             arglist.load_dir = arglist.save_dir
-        if arglist.display or arglist.restore or arglist.benchmark:
+        if arglist.restore or arglist.benchmark:
             print('Loading previous state...')
             U.load_state(arglist.load_dir)
 
@@ -119,7 +119,7 @@ def train(arglist):
             action_n = [agent.action(obs) for agent, obs in zip(trainers,obs_n)]
             # environment step
             new_obs_n, rew_n, done, info_n = env.step(action_n)
-            env.render()
+            # env.render()
             episode_step += 1
             # done = all(done_n)
             terminal = (episode_step >= arglist.max_episode_len)
