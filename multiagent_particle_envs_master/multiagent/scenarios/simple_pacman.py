@@ -1,5 +1,5 @@
 import numpy as np
-from multiagent.core import World, Agent, Landmark,Coins
+from multiagent.core import World, Agent, Landmark, Coins
 from multiagent.scenario import BaseScenario
 #from pacman_layout import get_layout
 
@@ -9,6 +9,7 @@ class Scenario(BaseScenario):
         world = World()
         # set any world properties first
         world.complete = False
+        world.time = 0
         world.dim_c = 2
         num_good_agents = 1
         num_adversaries = 2
@@ -19,14 +20,27 @@ class Scenario(BaseScenario):
         #world.landmark_ind = np.array(layout)
         # layout, num_landmarks = [[0,0]],0
         #world.landmark_ind = np.array(layout)
-        world.landmark_ind = np.array([[0,1,1,0.1],[0,-1,1,0.1],[1,0,0.1,1],[-1,0,0.1,1],[-0.4,0.4,0.2,0.2],
-                                       [-0.5,-0.1,0.1,0.5],[0.3,0.2,0.3,0.4],[0.1,-0.3,0.3,0.3],[0.7,-0.6,0.1,0.2]])
+        world.landmark_ind = np.array([[0,1,1,0.1],[0,-1,1,0.1],
+                                       [1,0,0.1,1],[-1,0,0.1,1],
+                                       [-0.4,0.4,0.2,0.2],
+                                       [-0.5,-0.1,0.1,0.5],
+                                       [0.3,0.2,0.3,0.4],
+                                       [0.1,-0.3,0.3,0.3],
+                                       [0.7,-0.6,0.1,0.2]])
         num_landmarks = len(world.landmark_ind)
         # world.agent_ind = np.array([[-0.7000000000000001, 0.8],[0.7000000000000001, 0.8],[-0.09999999999999995, -0.6000000000000001]])
         #world.agent_ind = np.array([[-0.5774193548387098, 0.935483870967742],[0.067741935483871,
         # 0.8709677419354839],[0.132258064516129, -0.8709677419354838]]) #for 31 x 31
 
-        world.agent_ind = np.array([[0.8,0.7],[-0.6,0.7],[0.4,-0.8],[0.6,0.7],[-0.8,0],[-0.5,-0.8],[-0.1,0.1],[-0.1,0.4],[-0.3,-0.4]])
+        world.agent_ind = np.array([[0.8,0.7],
+                                    [-0.6,0.7],
+                                    [0.4,-0.8],
+                                    [0.6,0.7],
+                                    [-0.8,0],
+                                    [-0.5,-0.8],
+                                    [-0.1,0.1],
+                                    [-0.1,0.4],
+                                    [-0.3,-0.4]])
         #world.agent_ind = np.array([[0.8, 0.7], [-0.6, 0.7], [-0.4, -0.7]])
 
         # world.agent_ind = np.array([[0.7000000000000001, 0.8],[-0.09999999999999995, -0.6000000000000001]])
@@ -45,9 +59,10 @@ class Scenario(BaseScenario):
         world.coins_ind = []
         for i in range(11):
             for j in range(11):
-                world.coins_ind.extend(
-                    [[i / 10, j / 10, 0.01, 0.01], [-i / 10, j / 10, 0.01, 0.01], [i / 10, -j / 10, 0.01, 0.01],
-                     [-i / 10, -j / 10, 0.01, 0.01]])
+                world.coins_ind.extend([[i / 10, j / 10, 0.01, 0.01],
+                                        [-i / 10, j / 10, 0.01, 0.01],
+                                        [i / 10, -j / 10, 0.01, 0.01],
+                                        [-i / 10, -j / 10, 0.01, 0.01]])
         world.coins_ind = np.array(world.coins_ind)
         temp = []
         for coin in world.coins_ind:
@@ -77,12 +92,17 @@ class Scenario(BaseScenario):
             agent.max_speed = 1.0 if agent.adversary else 1.5
             scale = -15
             if agent.adversary:
-                agent.shape =  np.array([( 0,0.3/scale ),( 0.25/scale, 0.75/scale ),( 0.5/scale,  0.3 /scale), (0.75/scale, 0.75/scale ),
-                                         ( 0.75/scale, -0.5/scale ),( 0.5/scale,
-                                                                                                        -0.75 /scale),
-                                         (-0.5/scale,  -0.75/scale ),(-0.75/scale, -0.5/scale ),(-0.75/scale, 0.75/scale ),(-0.5/scale,
-                                                                                                          0.3/scale ),
-                                         (-0.25/scale, 0.75/scale )])
+                agent.shape =  np.array([(0,0.3/scale ),
+                                         (0.25/scale,0.75/scale ),
+                                         (0.5/scale, 0.3 /scale),
+                                         (0.75/scale, 0.75/scale ),
+                                         (0.75/scale, -0.5/scale ),
+                                         (0.5/scale, -0.75 /scale),
+                                         (-0.5/scale, -0.75/scale),
+                                         (-0.75/scale, -0.5/scale ),
+                                         (-0.75/scale, 0.75/scale ),
+                                         (-0.5/scale, 0.3/scale ),
+                                         (-0.25/scale, 0.75/scale)])
                 # for i in agent.shape:
                 #     i[1] = - i[1]
 
@@ -169,6 +189,8 @@ class Scenario(BaseScenario):
         # print("############################################################################")
         # random properties for agents
         world.complete = False
+        world.time = 0
+
         for i, agent in enumerate(world.agents):
             agent.color = np.array([0.35, 0.85, 0.35]) if not agent.adversary else np.array([0.85, 0.35, 0.35])
             # random properties for landmarks
@@ -238,6 +260,7 @@ class Scenario(BaseScenario):
 
     def reward(self, agent, world):
         # Agents are rewarded based on minimum agent distance to each landmark
+        world.time += 1
         main_reward = self.adversary_reward(agent, world) if agent.adversary else self.agent_reward(agent, world)
         return main_reward
     def doned(self,agent,world):
@@ -302,6 +325,7 @@ class Scenario(BaseScenario):
         shape = False
         agents = self.good_agents(world)
         adversaries = self.adversaries(world)
+        rew -= (world.time**2)/100
         if shape:  # reward can optionally be shaped (decreased reward for increased distance from agents)
             for adv in adversaries:
                 rew -= 0.1 *10* min([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
@@ -315,6 +339,7 @@ class Scenario(BaseScenario):
         #         if a in agents: continue
         #         if self.is_collision(a, agent):
         #             rew -= 10
+        # print(rew)
         return rew
 
     def observation(self, agent, world):
@@ -347,6 +372,11 @@ class Scenario(BaseScenario):
                 other_vel.append(other.state.p_vel)
 
 
-        return np.concatenate([agent.state.p_vel] + [agent.state.p_pos] + entity_pos_x +
-                              entity_pos_y + entity_size+ coin_collected +
-                              other_pos +  other_vel)
+        return np.concatenate([agent.state.p_vel] +
+                              [agent.state.p_pos] +
+                              entity_pos_x +
+                              entity_pos_y +
+                              entity_size+
+                              coin_collected +
+                              other_pos +
+                              other_vel)
