@@ -12,7 +12,7 @@ def parse_args():
     parser = argparse.ArgumentParser("Reinforcement Learning experiments for multiagent environments")
     # Environment
     parser.add_argument("--scenario", type=str, default="simple", help="name of the scenario script")
-    parser.add_argument("--max-episode-len", type=int, default=25, help="maximum episode length")
+    parser.add_argument("--max-episode-len", type=int, default=50, help="maximum episode length")
     parser.add_argument("--num-episodes", type=int, default=60000, help="number of episodes")
     parser.add_argument("--num-adversaries", type=int, default=4, help="number of adversaries")
     parser.add_argument("--good-policy", type=str, default="maddpg", help="policy for good agents")
@@ -45,7 +45,7 @@ def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=Non
         out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=None)
         return out
 
-def make_env(scenario_name, arglist, benchmark=False):
+def make_env(scenario_name, arglist, benchmark=False, want_display=False):
     from multiagent.environment import MultiAgentEnv
     from pacman.gym_pacman.envs.pacman_env import PacmanEnv
     import multiagent.scenarios as scenarios
@@ -60,8 +60,9 @@ def make_env(scenario_name, arglist, benchmark=False):
     # else:
     #     env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
 
-    env = PacmanEnv()
+    env = PacmanEnv(want_display)
     env.seed(1)
+    # env.want_display = True
     return env
 
 def get_trainers(env, num_adversaries, obs_shape_n, arglist):
@@ -84,7 +85,7 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist):
 def train(arglist):
     with U.single_threaded_session():
         # Create environment
-        env = make_env(arglist.scenario, arglist, arglist.benchmark)
+        env = make_env(arglist.scenario, arglist, arglist.benchmark, arglist.display)
         # Create agent trainers
         obs_shape_n = [env.observation_space[i].shape for i in range(env.n)]
         num_adversaries = min(env.n, arglist.num_adversaries)
@@ -126,7 +127,7 @@ def train(arglist):
             # collect experience
             # print("obs_n", obs_n)
             # print("action_n", action_n)
-            print("rew_n", rew_n)
+            print("rew_n",episode_step, rew_n)
             # print("done", done)
             # print("terminal", terminal)
             for i, agent in enumerate(trainers):

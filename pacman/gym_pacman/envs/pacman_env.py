@@ -58,7 +58,7 @@ class PacmanEnv(gym.Env):
     # observation_space = spaces.Box(low=0, high=255,
     #         shape=(84, 84, 3), dtype=np.uint8)
 
-    def __init__(self):
+    def __init__(self,want_display):
         self.world = {
             'dim_c': 2,
             'dim_p': 2,
@@ -85,7 +85,7 @@ class PacmanEnv(gym.Env):
         # if true, every agent has the same reward
         # self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
         self.time = 0
-        self.want_display = False
+        self.want_display = want_display
 
         # self.action_space = spaces.Discrete(4) # up, down, left right
         self.display = PacmanGraphics(1.0) if self.want_display else None
