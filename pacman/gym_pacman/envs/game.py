@@ -569,7 +569,8 @@ class Game:
         """
         Main control loop for game play.
         """
-        self.display.initialize(self.state.data)
+        if self.display is not None:
+            self.display.initialize(self.state.data)
         self.numMoves = 0
 
         ###self.display.initialize(self.state.makeObservation(1).data)
@@ -701,7 +702,8 @@ class Game:
                 self.state = self.state.generateSuccessor( agentIndex, action )
 
             # Change the display
-            self.display.update( self.state.data )
+            if self.display is not None:
+                self.display.update( self.state.data )
             ###idx = agentIndex - agentIndex % 2 + 1
             ###self.display.update( self.state.makeObservation(idx).data )
 
@@ -727,13 +729,15 @@ class Game:
                     self._agentCrash(agentIndex)
                     self.unmute()
                     return
-        self.display.finish()
+        if self.display is not None:
+            self.display.finish()
 
     def init(self):
         """
             Initiates game, loads agents, creates display, etc.
         """
-        self.display.initialize(self.state.data)
+        if self.display is not None:
+            self.display.initialize(self.state.data)
         self.numMoves = 0
 
         agentIndex = self.startingIndex
@@ -882,7 +886,8 @@ class Game:
                 # Allow for game specific conditions (winning, losing, etc.)
                 self.rules.process(self.state, self)
                 # Change the display
-                self.display.update( self.state.data )
+                if self.display is not None:
+                    self.display.update( self.state.data )
                 reward_n[agentIndex] = rew
             else:
                 # If game has alr ended then set reward of remaining agents to 0
@@ -911,8 +916,8 @@ class Game:
                         self._agentCrash(agentIndex)
                         self.unmute()
                         return
-                    
-        
-        self.display.updateView()
+
+        if self.display is not None:
+            self.display.updateView()
         # return self.state.getScore() - old_reward
         return reward_n

@@ -85,9 +85,10 @@ class PacmanEnv(gym.Env):
         # if true, every agent has the same reward
         # self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
         self.time = 0
+        self.want_display = False
 
         # self.action_space = spaces.Discrete(4) # up, down, left right
-        self.display = PacmanGraphics(1.0)
+        self.display = PacmanGraphics(1.0) if self.want_display else None
         # self._action_set = range(len(PACMAN_ACTIONS))
         self.location = None
         self.viewer = None
@@ -102,9 +103,9 @@ class PacmanEnv(gym.Env):
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
                                        self.display, False, False)
         self.game.init()
-
-        self.display.initialize(self.game.state.data)
-        self.display.updateView()
+        if self.want_display:
+            self.display.initialize(self.game.state.data)
+            self.display.updateView()
 
         # configure spaces
         self.action_space = []
@@ -192,9 +193,9 @@ class PacmanEnv(gym.Env):
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
             self.display, False, False)
         self.game.init()
-
-        self.display.initialize(self.game.state.data)
-        self.display.updateView()
+        if self.want_display:
+            self.display.initialize(self.game.state.data)
+            self.display.updateView()
 
         self.location = self.game.state.data.agentStates[0].getPosition()
         self.ghostLocations = [a.getPosition() for a in self.game.state.data.agentStates[1:]]
@@ -373,7 +374,8 @@ class PacmanEnv(gym.Env):
     # just change the get image function
     def _get_image(self):
         # get x, y
-        image = self.display.image
+        if self.want_display:
+            image = self.display.image
         w, h = image.size
         DEFAULT_GRID_SIZE_X, DEFAULT_GRID_SIZE_Y = w / float(self.layout.width), h / float(self.layout.height)
 
@@ -406,7 +408,8 @@ class PacmanEnv(gym.Env):
         # TODO: implement code here to do closing stuff
         if self.viewer is not None:
             self.viewer.close()
-        self.display.finish()
+        if self.want_display:
+            self.display.finish()
 
     def __del__(self):
         self.close()
