@@ -163,7 +163,7 @@ class PacmanEnv(gym.Env):
                 else:
                     chosenLayout = self.np_random.choice(self.noGhost_layouts)
             self.chosen_layout = chosenLayout
-            print("Chose layout", chosenLayout)
+            # print("Chose layout", chosenLayout)
             self.layout = getLayout(chosenLayout)
         self.maze_size = (self.layout.width, self.layout.height)
 

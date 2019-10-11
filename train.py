@@ -127,7 +127,7 @@ def train(arglist):
             # collect experience
             # print("obs_n", obs_n)
             # print("action_n", action_n)
-            print("rew_n",episode_step, rew_n)
+            # print("rew_n",episode_step, rew_n)
             # print("done", done)
             # print("terminal", terminal)
             for i, agent in enumerate(trainers):
@@ -176,8 +176,9 @@ def train(arglist):
                 loss = agent.update(trainers, train_step)
 
             # save model, display training output
-            if terminal and (len(episode_rewards) % arglist.save_rate == 0):
-                U.save_state(arglist.save_dir, saver=saver)
+            if (terminal or done) and (len(episode_rewards) % arglist.save_rate == 0):
+                saving = arglist.save_dir + ("{}".format(0 + len(episode_rewards)))
+                U.save_state(saving, saver=saver)
                 # print statement depends on whether or not there are adversaries
                 if num_adversaries == 0:
                     print("steps: {}, episodes: {}, mean episode reward: {}, time: {}".format(
