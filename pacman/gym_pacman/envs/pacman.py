@@ -96,14 +96,14 @@ class GameState:
 
         # Copy current state
         state = GameState(self)
-        GhostRules.checkDeath(state, agentIndex)
         reward = 0
         # Let agent's logic deal with its action's effects on the board
         if agentIndex == 0:  # Pacman is moving
             state.data._eaten = [False for i in range(state.getNumAgents())]
             PacmanRules.applyAction( state, action )
         else:                # A ghost is moving
-            GhostRules.applyAction( state, action, agentIndex )
+            if not state.data._eaten[agentIndex]:
+                GhostRules.applyAction( state, action, agentIndex )
 
         # Time passes
         if agentIndex == 0:
@@ -432,8 +432,8 @@ class GhostRules:
             for index in range( 1, len( state.data.agentStates ) ):
                 ghostState = state.data.agentStates[index]
                 ghostPosition = ghostState.configuration.getPosition()
-                # if GhostRules.canKill( pacmanPosition, ghostPosition ):
-                #     GhostRules.collide( state, ghostState, index )
+                if GhostRules.canKill( pacmanPosition, ghostPosition ):
+                    GhostRules.collide( state, ghostState, index )
 
         else:
             ghostState = state.data.agentStates[agentIndex]
