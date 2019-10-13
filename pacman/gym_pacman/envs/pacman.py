@@ -96,7 +96,7 @@ class GameState:
 
         # Copy current state
         state = GameState(self)
-
+        GhostRules.checkDeath(state, agentIndex)
         reward = 0
         # Let agent's logic deal with its action's effects on the board
         if agentIndex == 0:  # Pacman is moving

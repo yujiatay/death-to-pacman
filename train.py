@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--load-dir", type=str, default="", help="directory in which training state and model are loaded")
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False)
-    parser.add_argument("--display", action="store_true", default=False)
+    parser.add_argument("--display", action="store_true", default=True)
     parser.add_argument("--benchmark", action="store_true", default=False)
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data is saved")
@@ -154,7 +154,8 @@ def train(arglist):
 
             # increment global step counter
             train_step += 1
-
+            if train_step % 1000 == 0:
+                print(train_step)
             # for benchmarking learned policies
             if arglist.benchmark:
                 for i, info in enumerate(info_n):
