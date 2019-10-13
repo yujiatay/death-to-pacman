@@ -58,7 +58,7 @@ class PacmanEnv(gym.Env):
     # observation_space = spaces.Box(low=0, high=255,
     #         shape=(84, 84, 3), dtype=np.uint8)
 
-    def __init__(self,want_display):
+    def __init__(self,want_display = False):
         self.world = {
             'dim_c': 2,
             'dim_p': 2,
@@ -252,8 +252,8 @@ class PacmanEnv(gym.Env):
             # print("legal moves: ", legalMoves)
             legalMoveIndexes = list(filter(lambda x: PACMAN_ACTIONS[x] in legalMoves, pacman_actions_index))
             # print("legal indexes: ", legalMoveIndexes)
-            max_val = 0
-            best_move = 4  # do not move
+            max_val = action[legalMoveIndexes[0]]
+            best_move = legalMoveIndexes[0]  # do not move
             for j, act in enumerate(action):
                 if j in legalMoveIndexes and act > max_val:
                     max_val = act

@@ -432,8 +432,9 @@ class GhostRules:
             for index in range( 1, len( state.data.agentStates ) ):
                 ghostState = state.data.agentStates[index]
                 ghostPosition = ghostState.configuration.getPosition()
-                if GhostRules.canKill( pacmanPosition, ghostPosition ):
-                    GhostRules.collide( state, ghostState, index )
+                # if GhostRules.canKill( pacmanPosition, ghostPosition ):
+                #     GhostRules.collide( state, ghostState, index )
+
         else:
             ghostState = state.data.agentStates[agentIndex]
             ghostPosition = ghostState.configuration.getPosition()

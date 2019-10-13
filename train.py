@@ -24,7 +24,9 @@ def parse_args():
     parser.add_argument("--num-units", type=int, default=64, help="number of units in the mlp")
     # Checkpointing
     parser.add_argument("--exp-name", type=str, default=None, help="name of the experiment")
-    parser.add_argument("--save-dir", type=str, default="/tmp/policy/", help="directory in which training state and model should be saved")
+    parser.add_argument("--save-dir", type=str, default="C:/Users/Franklin Leong/Desktop/Backup/University/NUS "
+                                                        "Y3S1/CS3244/Project/savess/", help="directory in which "
+                                                                                            "training state and model should be saved")
     parser.add_argument("--save-rate", type=int, default=1000, help="save model once every time this many episodes are completed")
     parser.add_argument("--load-dir", type=str, default="", help="directory in which training state and model are loaded")
     # Evaluation
@@ -90,6 +92,8 @@ def train(arglist):
         obs_shape_n = [env.observation_space[i].shape for i in range(env.n)]
         num_adversaries = min(env.n, arglist.num_adversaries)
         print("num adversaries: ", num_adversaries, ", env.n: ", env.n)
+
+        #need to ensure that the trainer is in correct order. pacman in front
         trainers = get_trainers(env, num_adversaries, obs_shape_n, arglist)
         print('Using good policy {} and adv policy {}'.format(arglist.good_policy, arglist.adv_policy))
 
@@ -98,9 +102,10 @@ def train(arglist):
 
         # Load previous results, if necessary
         if arglist.load_dir == "":
-            arglist.load_dir = arglist.save_dir
-        if arglist.restore or arglist.benchmark:
+            arglist.load_dir = arglist.save_dir + ("{}".format(15000))
+        if arglist.restore or arglist.benchmark or arglist.display:
             print('Loading previous state...')
+
             U.load_state(arglist.load_dir)
 
         episode_rewards = [0.0]  # sum of rewards for all agents
