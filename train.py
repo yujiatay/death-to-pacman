@@ -31,7 +31,7 @@ def parse_args():
     parser.add_argument("--load-dir", type=str, default="", help="directory in which training state and model are loaded")
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False)
-    parser.add_argument("--display", action="store_true", default=True)
+    parser.add_argument("--display", action="store_true", default=False)
     parser.add_argument("--benchmark", action="store_true", default=False)
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data is saved")
@@ -73,14 +73,14 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist):
     trainer = MADDPGAgentTrainer
     print("obs_shape_n", obs_shape_n)
     print("action_space", env.action_space)
-    for i in range(num_adversaries):
-        trainers.append(trainer(
-            "agent_%d" % i, model, obs_shape_n, env.action_space, i, arglist,
-            local_q_func=(arglist.adv_policy=='ddpg')))
-    for i in range(num_adversaries, env.n):
+    for i in range(1):
         trainers.append(trainer(
             "agent_%d" % i, model, obs_shape_n, env.action_space, i, arglist,
             local_q_func=(arglist.good_policy=='ddpg')))
+    for i in range(1, env.n):
+        trainers.append(trainer(
+            "agent_%d" % i, model, obs_shape_n, env.action_space, i, arglist,
+            local_q_func=(arglist.adv_policy=='ddpg')))
     return trainers
 
 
