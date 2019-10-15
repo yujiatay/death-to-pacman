@@ -98,10 +98,10 @@ class PacmanEnv(gym.Env):
 
         self.seed(1)
         self.rules = ClassicGameRules(300)
-        self.rules.quiet = False
+        self.rules.quiet = True
 
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
-                                       self.display, False, False)
+                                       self.display, quiet=True, catchExceptions=False)
         self.game.init()
         if self.want_display:
             self.display.initialize(self.game.state.data)
@@ -188,10 +188,10 @@ class PacmanEnv(gym.Env):
         # self.pacman = OpenAIAgent()
 
         self.rules = ClassicGameRules(300)
-        self.rules.quiet = False
+        self.rules.quiet = True
 
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
-            self.display, False, False)
+            self.display, quiet=True, catchExceptions=False)
         self.game.init()
         if self.want_display:
             self.display.initialize(self.game.state.data)
