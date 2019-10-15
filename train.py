@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import time
 import pickle
+import os
 
 import maddpg.common.tf_util as U
 from maddpg.trainer.maddpg import MADDPGAgentTrainer
@@ -87,6 +88,7 @@ def get_trainers(env, num_adversaries, obs_shape_n, arglist):
 
 
 def train(arglist):
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
     with U.single_threaded_session():
         # Create environment
         env = make_env(arglist.scenario, arglist, arglist.benchmark, arglist.display)
@@ -156,8 +158,8 @@ def train(arglist):
 
             # increment global step counter
             train_step += 1
-            if train_step % 1000 == 0:
-                print(train_step)
+            # if train_step % 1000 == 0:
+            #     print(train_step)
             # for benchmarking learned policies
             if arglist.benchmark:
                 for i, info in enumerate(info_n):
@@ -182,7 +184,6 @@ def train(arglist):
                 agent.preupdate()
             for agent in trainers:
                 loss = agent.update(trainers, train_step)
-
             # save model, display training output
             if (terminal or done) and (len(episode_rewards) % arglist.save_rate == 0):
                 saving = arglist.save_dir + ("{}".format(0 + len(episode_rewards)))
