@@ -137,7 +137,7 @@ class PacmanEnv(gym.Env):
             else:
                 self.action_space.append(total_action_space[0])
             # observation space
-            obs_dim = len(self.observation(i,  self.game.state.data.agentStates))
+            obs_dim = len(self.observation(i,  self.game.state.data.agentStates,self.game.state))
             self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,), dtype=np.float32))
             # agent.action.c = np.zeros(self.world['dim_c'])
 
@@ -206,7 +206,7 @@ class PacmanEnv(gym.Env):
         self.orientation_history = [self.orientation]
         self.illegal_move_counter = 0
 
-        obs_n = [self.observation(i, self.game.state.data.agentStates) for i in range(self.n)]
+        obs_n = [self.observation(i, self.game.state.data.agentStates, self.game.state) for i in range(self.n)]
 
         self.cum_reward = 0
 
@@ -278,7 +278,7 @@ class PacmanEnv(gym.Env):
         self.orientation = PACMAN_DIRECTIONS.index(self.game.state.data.agentStates[0].getDirection())
         self.orientation_history.append(self.orientation)
 
-        obs_n = [self.observation(i, self.game.state.data.agentStates) for i in range(self.n)]
+        obs_n = [self.observation(i, self.game.state.data.agentStates, self.game.state) for i in range(self.n)]
 
         # extent = (self.location[0] - 1, self.location[1] - 1),(self.location[0] + 1, self.location[1] + 1),
         # self.ghostInFrame = any([ g[0] >= extent[0][0] and g[1] >= extent[0][1] and g[0] <= extent[1][0] and g[1] <= extent[1][1]
@@ -352,11 +352,19 @@ class PacmanEnv(gym.Env):
     #                     rew += 10
     #     return rew
 
-    def observation(self, agent_index, agent_states):
+    def observation(self, agent_index, agent_states, game_states):
         comm = []
         other_pos = []
         other_vel = []
         agent = agent_states[agent_index]
+        # capsule_loc = np.asarray(game_states.getCapsules_TF()).flatten()
+        capsule_loc = np.asarray(list(map(int,str(game_states.getCapsules_TF()).replace("T","1").replace("F","0").replace("\n",
+                                                                                                               ""))))
+        food_loc = np.asarray(list(map(int,str(game_states.getFood()).replace("T","1").replace("F","0").replace("\n",
+                                                                                                               ""))))
+        wall_loc = np.asarray(list(map(int,str(game_states.getWalls()).replace("T","1").replace("F","0").replace("\n",
+                                                                                                               ""))))
+
         for i, other in enumerate(agent_states):
             if i == agent_index:
                 continue
@@ -365,7 +373,8 @@ class PacmanEnv(gym.Env):
             if i == 0:  # other is pacman
                 other_vel.append(other.getDirection())
         # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
-        return np.concatenate([agent.getPosition()] + other_pos)
+
+        return np.concatenate( ( np.concatenate(([agent.getPosition()] + other_pos)),capsule_loc,food_loc,wall_loc) )
 
 
     # def get_action_meanings(self):

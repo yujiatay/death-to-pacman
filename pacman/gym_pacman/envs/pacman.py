@@ -39,7 +39,7 @@ code to run a game.  This file is divided into three sections:
 To play your first game, type 'python pacman.py' from the command line.
 The keys are 'a', 's', 'd', and 'w' to move (or arrow keys).  Have fun!
 """
-from .game import GameStateData, Game, Directions, Actions
+from .game import GameStateData, Game, Directions, Actions, Grid
 from .util import nearestPoint, manhattanDistance
 from .layout import getLayout
 import sys, types, time, random, os
@@ -118,6 +118,7 @@ class GameState:
             rew = state.data.scoreChange
         else:
             rew = -state.data.scoreChange
+            rew -= 2*TIME_PENALTY
 
         # Book keeping
         state.data._agentMoved = agentIndex
@@ -168,6 +169,16 @@ class GameState:
 
     def getScore( self ):
         return float(self.data.score)
+    def getCapsules_TF(self):
+        capsules_pos = self.getCapsules()
+        grid = Grid(self.data.layout.width, self.data.layout.height, False)
+        for i in capsules_pos:
+            grid[i[0]][i[1]] = True
+
+        return grid
+
+
+
 
     def getCapsules(self):
         """
