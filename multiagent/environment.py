@@ -30,7 +30,8 @@ class MultiAgentEnv(gym.Env):
         # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
         self.discrete_action_input = False
         # if true, even the action is continuous, action will be performed discretely
-        self.force_discrete_action = world.discrete_action if hasattr(world, 'discrete_action') else False
+        # self.force_discrete_action = world.discrete_action if hasattr(world, 'discrete_action') else False
+        self.force_discrete_action = True # TODO:
         # if true, every agent has the same reward
         self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
         self.time = 0
@@ -144,6 +145,7 @@ class MultiAgentEnv(gym.Env):
     def _set_action(self, action, agent, action_space, time=None):
         agent.action.u = np.zeros(self.world.dim_p)
         agent.action.c = np.zeros(self.world.dim_c)
+        # print("_set_act: bef multidis", action)
         # process action
         if isinstance(action_space, MultiDiscrete):
             act = []
@@ -153,9 +155,12 @@ class MultiAgentEnv(gym.Env):
                 act.append(action[index:(index+s)])
                 index += s
             action = act
+            # print("IS MULTIDISCRETE")
         else:
+            # print("IS NOT MULTIDISCRETE")
             action = [action]
-
+        print("_set_act: after multidis", action)
+        # print("agent_action_u: bef loop", agent.action.u)
         if agent.movable:
             # physical action
             if self.discrete_action_input:
@@ -168,6 +173,7 @@ class MultiAgentEnv(gym.Env):
             else:
                 if self.force_discrete_action:
                     d = np.argmax(action[0])
+                    print("<<<< force_discrete_action D: ", d)
                     action[0][:] = 0.0
                     action[0][d] = 1.0
                 if self.discrete_action_space:
@@ -180,6 +186,7 @@ class MultiAgentEnv(gym.Env):
                 sensitivity = agent.accel
             agent.action.u *= sensitivity
             action = action[1:]
+        print("agent_action_u: aft loop", agent.action.u)
         if not agent.silent:
             # communication action
             if self.discrete_action_input:

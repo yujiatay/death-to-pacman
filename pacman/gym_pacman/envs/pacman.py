@@ -39,7 +39,7 @@ code to run a game.  This file is divided into three sections:
 To play your first game, type 'python pacman.py' from the command line.
 The keys are 'a', 's', 'd', and 'w' to move (or arrow keys).  Have fun!
 """
-from .game import GameStateData, Game, Directions, Actions
+from .game import GameStateData, Game, Directions, Actions, Grid
 from .util import nearestPoint, manhattanDistance
 from .layout import getLayout
 import sys, types, time, random, os
@@ -96,13 +96,14 @@ class GameState:
 
         # Copy current state
         state = GameState(self)
-
+        reward = 0
         # Let agent's logic deal with its action's effects on the board
         if agentIndex == 0:  # Pacman is moving
             state.data._eaten = [False for i in range(state.getNumAgents())]
             PacmanRules.applyAction( state, action )
         else:                # A ghost is moving
-            GhostRules.applyAction( state, action, agentIndex )
+            if not state.data._eaten[agentIndex]:
+                GhostRules.applyAction( state, action, agentIndex )
 
         # Time passes
         if agentIndex == 0:
@@ -113,12 +114,18 @@ class GameState:
         # Resolve multi-agent effects
         GhostRules.checkDeath( state, agentIndex )
 
+        if agentIndex == 0:
+            rew = state.data.scoreChange
+        else:
+            rew = -state.data.scoreChange
+            rew -= 2*TIME_PENALTY
+
         # Book keeping
         state.data._agentMoved = agentIndex
         state.data.score += state.data.scoreChange
         GameState.explored.add(self)
         GameState.explored.add(state)
-        return state
+        return state, rew
 
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
@@ -162,6 +169,16 @@ class GameState:
 
     def getScore( self ):
         return float(self.data.score)
+    def getCapsules_TF(self):
+        capsules_pos = self.getCapsules()
+        grid = Grid(self.data.layout.width, self.data.layout.height, False)
+        for i in capsules_pos:
+            grid[i[0]][i[1]] = True
+
+        return grid
+
+
+
 
     def getCapsules(self):
         """
@@ -335,8 +352,11 @@ class PacmanRules:
         Edits the state to reflect the results of the action.
         """
         legal = PacmanRules.getLegalActions( state )
+        # print("Legal moves for pacman: ", legal)
         if action not in legal:
-            raise Exception("Illegal action " + str(action))
+            # raise Exception("Illegal action " + str(action))
+            print("Illegal action " + str(action) + " so changing to stop instead.")
+            action = Directions.STOP
 
         pacmanState = state.data.agentStates[0]
 
@@ -385,7 +405,12 @@ class GhostRules:
         reach a dead end, but can turn 90 degrees at intersections.
         """
         conf = state.getGhostState( ghostIndex ).configuration
+        # print("GHOST ", ghostIndex, " ", conf)
         possibleActions = Actions.getPossibleActions( conf, state.data.layout.walls )
+        # Remove the illegal STOP from possibleActions
+        if Directions.STOP in possibleActions:
+            possibleActions.remove(Directions.STOP)
+        # print("GHOST ", ghostIndex, "'s possible actions", possibleActions)
         reverse = Actions.reverseDirection( conf.direction )
         if reverse in possibleActions and len( possibleActions ) > 1:
             possibleActions.remove( reverse )
@@ -420,6 +445,7 @@ class GhostRules:
                 ghostPosition = ghostState.configuration.getPosition()
                 if GhostRules.canKill( pacmanPosition, ghostPosition ):
                     GhostRules.collide( state, ghostState, index )
+
         else:
             ghostState = state.data.agentStates[agentIndex]
             ghostPosition = ghostState.configuration.getPosition()
