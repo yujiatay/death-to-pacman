@@ -32,7 +32,6 @@ def parse_args():
     parser.add_argument("--load-dir", type=str, default="", help="directory in which training state and model are "
                                                                  "loaded")
     # Evaluation
-    parser.add_argument("--load", default=False)
     parser.add_argument("--restore", action="store_true", default=False)
     parser.add_argument("--display", action="store_true", default= True)
     parser.add_argument("--benchmark", action="store_true", default=False)
@@ -40,6 +39,10 @@ def parse_args():
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data"
                                                                                         " is saved")
     parser.add_argument("--plots-dir", type=str, default="./learning_curves/", help="directory where plot data is saved")
+
+    #Newly added arguments
+    parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
+    parser.add_argument("--layout", type=str, default="mediumClassic") #decide the layout to train
     return parser.parse_args()
 
 def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=None):
@@ -66,7 +69,7 @@ def make_env(scenario_name, arglist, benchmark=False):
     # else:
     #     env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
 
-    env = PacmanEnv(arglist.display,arglist.num_adversaries,arglist.max_episode_len)
+    env = PacmanEnv(arglist.display,arglist.num_adversaries,arglist.max_episode_len,arglist.layout)
     env.seed(1)
     # env.want_display = True
     return env

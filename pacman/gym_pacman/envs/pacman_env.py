@@ -56,14 +56,16 @@ class PacmanEnv(gym.Env):
     # observation_space = spaces.Box(low=0, high=255,
     #         shape=(84, 84, 3), dtype=np.uint8)
 
-    def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH):
+    def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH, game_layout):
         self.world = {
             'dim_c': 2,
             'dim_p': 2,
         }
 
+        #Newly added
         self.MAX_GHOSTS = MAX_GHOSTS
         self.MAX_EP_LENGTH = MAX_EP_LENGTH
+        self.game_layout = game_layout
 
         self.ghosts = [OpenAIAgent() for i in range(self.MAX_GHOSTS)]
         # this agent is just a placeholder for graphics to work
@@ -174,13 +176,13 @@ class PacmanEnv(gym.Env):
         if self.np_random is None:
             self.np_random, seed = seeding.np_random(seed)
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout='mediumClassic')
+        self.chooseLayout(randomLayout=False, chosenLayout= self.game_layout)
         print(self.layout)
         return [seed]
 
     def reset(self, layout=None):
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout='mediumClassic')
+        self.chooseLayout(randomLayout=False, chosenLayout= self.game_layout)
 
         self.step_counter = 0
         self.cum_reward = 0
