@@ -4,6 +4,7 @@ import tensorflow as tf
 import time
 import pickle
 import os
+import math
 
 import maddpg.common.tf_util as U
 from maddpg.trainer.maddpg import MADDPGAgentTrainer
@@ -47,10 +48,16 @@ def parse_args():
 
 def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=None):
     # This model takes as input an observation and returns values of all actions
+    n = int(input.shape[1])
+    m = num_outputs
+    first_layer = int((math.sqrt((m+2)*n)) + 2*(math.sqrt(n/(m+2))))
+    second_layer = int(m*(math.sqrt(n/(m+2))))
+
+
     with tf.variable_scope(scope, reuse=reuse):
         out = input
-        out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.relu)
-        out = layers.fully_connected(out, num_outputs=num_units, activation_fn=tf.nn.relu)
+        out = layers.fully_connected(out, num_outputs=first_layer, activation_fn=tf.nn.relu)
+        out = layers.fully_connected(out, num_outputs=second_layer, activation_fn=tf.nn.relu)
         out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=None)
         return out
 
