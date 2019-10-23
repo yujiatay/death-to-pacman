@@ -15,8 +15,8 @@ def parse_args():
     parser.add_argument("--scenario", type=str, default="simple", help="name of the scenario script")
     parser.add_argument("--max-episode-len", type=int, default=50, help="maximum episode length")
     parser.add_argument("--num-episodes", type=int, default=60000, help="number of episodes")
-    parser.add_argument("--num-adversaries", type=int, default=4, help="number of adversaries")
-    parser.add_argument("--good-policy", type=str, default="maddpg", help="policy for good agents")
+    parser.add_argument("--num-adversaries", type=int, default=2, help="number of adversaries")
+    parser.add_argument("--good-policy", type=str, default="ddpg", help="policy for good agents")
     parser.add_argument("--adv-policy", type=str, default="maddpg", help="policy of adversaries")
     # Core training parameters
     parser.add_argument("--lr", type=float, default=1e-2, help="learning rate for Adam optimizer")
@@ -28,12 +28,13 @@ def parse_args():
     parser.add_argument("--save-dir", type=str, default="./save_files/", help="directory in which training state and "
                                                                               "model should be saved")
     parser.add_argument("--save-rate", type=int, default=1000, help="save model once every time this many episodes are "
-                                                                g    "completed")
+                                                                    "completed")
     parser.add_argument("--load-dir", type=str, default="", help="directory in which training state and model are "
                                                                  "loaded")
     # Evaluation
+    parser.add_argument("--load", default=False)
     parser.add_argument("--restore", action="store_true", default=False)
-    parser.add_argument("--display", action="store_true", default= False)
+    parser.add_argument("--display", action="store_true", default= True)
     parser.add_argument("--benchmark", action="store_true", default=False)
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data"
@@ -50,7 +51,7 @@ def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=Non
         out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=None)
         return out
 
-def make_env(scenario_name, arglist, benchmark=False, want_display=False):
+def make_env(scenario_name, arglist, benchmark=False):
     from multiagent.environment import MultiAgentEnv
     from pacman.gym_pacman.envs.pacman_env import PacmanEnv
     import multiagent.scenarios as scenarios
@@ -65,7 +66,7 @@ def make_env(scenario_name, arglist, benchmark=False, want_display=False):
     # else:
     #     env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
 
-    env = PacmanEnv(want_display)
+    env = PacmanEnv(arglist.display,arglist.num_adversaries,arglist.max_episode_len)
     env.seed(1)
     # env.want_display = True
     return env
@@ -91,7 +92,7 @@ def train(arglist):
     os.environ["CUDA_VISIBLE_DEVICES"] = "0,1"
     with U.single_threaded_session():
         # Create environment
-        env = make_env(arglist.scenario, arglist, arglist.benchmark, arglist.display)
+        env = make_env(arglist.scenario, arglist, arglist.benchmark)
         # Create agent trainers
         obs_shape_n = [env.observation_space[i].shape for i in range(env.n)]
         num_adversaries = min(env.n, arglist.num_adversaries)
@@ -107,9 +108,11 @@ def train(arglist):
         # Load previous results, if necessary
         if arglist.load_dir == "":
             arglist.load_dir = arglist.save_dir + ("{}".format(15000))
-        if arglist.restore or arglist.benchmark or arglist.display:
+        if arglist.restore or arglist.benchmark:
             print('Loading previous state...')
-
+            U.load_state(arglist.load_dir)
+        if arglist.display and arglist.load:
+            print('Loading previous state...')
             U.load_state(arglist.load_dir)
 
         episode_rewards = [0.0]  # sum of rewards for all agents

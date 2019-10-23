@@ -21,7 +21,6 @@ from multiagent.multi_discrete import MultiDiscrete
 
 DEFAULT_GHOST_TYPE = 'DirectionalGhost'
 
-MAX_GHOSTS = 4
 
 PACMAN_ACTIONS = ['North', 'South', 'East', 'West', 'Stop']
 pacman_actions_index = [0, 1, 2, 3, 4]
@@ -29,7 +28,6 @@ pacman_actions_index = [0, 1, 2, 3, 4]
 PACMAN_DIRECTIONS = ['North', 'South', 'East', 'West']
 ROTATION_ANGLES = [0, 180, 90, 270]
 
-MAX_EP_LENGTH = 100
 
 import os
 fdir = '/'.join(os.path.split(__file__)[:-1])
@@ -58,12 +56,16 @@ class PacmanEnv(gym.Env):
     # observation_space = spaces.Box(low=0, high=255,
     #         shape=(84, 84, 3), dtype=np.uint8)
 
-    def __init__(self,want_display = False):
+    def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH):
         self.world = {
             'dim_c': 2,
             'dim_p': 2,
         }
-        self.ghosts = [OpenAIAgent() for i in range(MAX_GHOSTS)]
+
+        self.MAX_GHOSTS = MAX_GHOSTS
+        self.MAX_EP_LENGTH = MAX_EP_LENGTH
+
+        self.ghosts = [OpenAIAgent() for i in range(self.MAX_GHOSTS)]
         # this agent is just a placeholder for graphics to work
         self.pacman = OpenAIAgent()
         self.agents = [self.pacman] + self.ghosts
@@ -86,6 +88,7 @@ class PacmanEnv(gym.Env):
         # self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
         self.time = 0
         self.want_display = want_display
+
 
         # self.action_space = spaces.Discrete(4) # up, down, left right
         self.display = PacmanGraphics(1.0) if self.want_display else None
@@ -171,13 +174,13 @@ class PacmanEnv(gym.Env):
         if self.np_random is None:
             self.np_random, seed = seeding.np_random(seed)
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout='originalClassic')
+        self.chooseLayout(randomLayout=False, chosenLayout='mediumClassic')
         print(self.layout)
         return [seed]
 
     def reset(self, layout=None):
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout='originalClassic')
+        self.chooseLayout(randomLayout=False, chosenLayout='mediumClassic')
 
         self.step_counter = 0
         self.cum_reward = 0
@@ -226,7 +229,7 @@ class PacmanEnv(gym.Env):
 
     def step(self, action_n):
         # implement code here to take an action
-        if self.step_counter >= MAX_EP_LENGTH or self.done:
+        if self.step_counter >= self.MAX_EP_LENGTH or self.done:
             self.step_counter += 1
             return np.zeros(self.observation_space), 0.0, True, {
                 'past_loc': [self.location_history[-2]],
@@ -296,7 +299,7 @@ class PacmanEnv(gym.Env):
             # 'ghost_in_frame': [self.ghostInFrame],
         }
 
-        if self.step_counter >= MAX_EP_LENGTH:
+        if self.step_counter >= self.MAX_EP_LENGTH:
             done = True
 
         self.done = done

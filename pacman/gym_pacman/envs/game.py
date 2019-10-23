@@ -897,7 +897,7 @@ class Game:
 
         if self.state.isLose():
             reward_n[0] -= 500
-            for i in range(1, 5):
+            for i in range(1, len(action_n)):
                 if reward_n[i] > 0:
                     reward_n[i] = 200
                 else:
