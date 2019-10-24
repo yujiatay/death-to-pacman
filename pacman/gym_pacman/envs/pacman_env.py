@@ -56,7 +56,7 @@ class PacmanEnv(gym.Env):
     # observation_space = spaces.Box(low=0, high=255,
     #         shape=(84, 84, 3), dtype=np.uint8)
 
-    def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH, game_layout):
+    def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH,game_layout,obs_type,partial_obs_range,shared_obs):
         self.world = {
             'dim_c': 2,
             'dim_p': 2,
@@ -66,6 +66,10 @@ class PacmanEnv(gym.Env):
         self.MAX_GHOSTS = MAX_GHOSTS
         self.MAX_EP_LENGTH = MAX_EP_LENGTH
         self.game_layout = game_layout
+        self.obs_type = obs_type
+        self.partial_obs_range = partial_obs_range
+        self.shared_obs = shared_obs
+
 
         self.ghosts = [OpenAIAgent() for i in range(self.MAX_GHOSTS)]
         # this agent is just a placeholder for graphics to work
@@ -73,6 +77,7 @@ class PacmanEnv(gym.Env):
         self.agents = [self.pacman] + self.ghosts
         # set required vectorized gym env property
         self.n = len(self.agents)
+        self.prev_obs = [[] for i in range(self.n)]
         # scenario callbacks
         # self.reset_callback = reset_callback
         # self.reward_callback = reward_callback
@@ -362,14 +367,6 @@ class PacmanEnv(gym.Env):
         other_pos = []
         other_vel = []
         agent = agent_states[agent_index]
-        # capsule_loc = np.asarray(game_states.getCapsules_TF()).flatten()
-        capsule_loc = np.asarray(list(map(int,str(game_states.getCapsules_TF()).replace("T","1").replace("F","0").replace("\n",
-                                                                                                               ""))))
-        food_loc = np.asarray(list(map(int,str(game_states.getFood()).replace("T","1").replace("F","0").replace("\n",
-                                                                                                               ""))))
-        wall_loc = np.asarray(list(map(int,str(game_states.getWalls()).replace("T","1").replace("F","0").replace("\n",
-                                                                                                               ""))))
-
         for i, other in enumerate(agent_states):
             if i == agent_index:
                 continue
@@ -377,9 +374,80 @@ class PacmanEnv(gym.Env):
             other_pos.append(np.array(other.getPosition()) - np.array(agent.getPosition()))
             if i == 0:  # other is pacman
                 other_vel.append(other.getDirection())
-        # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
 
-        return np.concatenate( ( np.concatenate(([agent.getPosition()] + other_pos)),capsule_loc,food_loc,wall_loc) )
+        if self.obs_type == 'full_obs':
+            capsule_loc = np.asarray(list(map(int,str(game_states.getCapsules_TF()).replace("T","1").replace("F","0").replace("\n",
+                                                                                                                   ""))))
+            food_loc = np.asarray(list(map(int,str(game_states.getFood()).replace("T","1").replace("F","0").replace("\n",
+                                                                                                                   ""))))
+            wall_loc = np.asarray(list(map(int,str(game_states.getWalls()).replace("T","1").replace("F","0").replace("\n",
+                                                                                                                   ""))))
+            # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
+            if self.shared_obs:
+                tmp = np.concatenate(
+                    (np.concatenate(([agent.getPosition()] + other_pos)), capsule_loc, food_loc, wall_loc))
+                if self.prev_obs[agent_index] == []:
+                    self.prev_obs[agent_index] = np.zeros(len(tmp))
+                obs = np.concatenate((self.prev_obs[agent_index], tmp))
+                self.prev_obs[agent_index] = tmp
+            else:
+                if agent_index == 0:
+                    tmp = np.concatenate(
+                        (np.concatenate(([agent.getPosition()] + other_pos)), capsule_loc, food_loc, wall_loc))
+                    if self.prev_obs[agent_index] == []:
+                        self.prev_obs[agent_index] = np.zeros(len(tmp))
+                    obs = np.concatenate((self.prev_obs[agent_index], tmp))
+                    self.prev_obs[agent_index] = tmp
+                else:
+                    tmp = np.concatenate(
+                        (np.concatenate(([agent.getPosition()] + other_pos)),wall_loc))
+                    if self.prev_obs[agent_index] == []:
+                        self.prev_obs[agent_index] = np.zeros(len(tmp))
+                    obs = np.concatenate((self.prev_obs[agent_index], tmp))
+                    self.prev_obs[agent_index] = tmp
+
+
+
+            return obs
+
+        elif self.obs_type == 'partial_obs':
+            partial_size = self.partial_obs_range
+            part_wall = []
+            part_food = []
+            part_capsule = []
+
+            width,height = game_states.getWidth(),game_states.getHeight()
+
+            wall = game_states.getWalls()
+            food = game_states.getFood()
+            capsule = game_states.getCapsules_TF()
+            x,y = agent.getPosition()[0], agent.getPosition()[1]
+            diff = (partial_size - 3)//2
+
+            for i in range(1+diff,-2-diff,-1):
+                for j in range(-1-diff,2+diff):
+                    if y+i<=0 or y+i>=height or x+j<=0 or x+j>=width:
+                        part_wall.append(1)
+                        part_food.append(0)
+                        part_capsule.append(0)
+                    else:
+                        part_wall.append(int(wall[int(x+j)][int(y+i)]))
+                        part_food.append(int(food[int(x + j)][int(y + i)]))
+                        part_capsule.append(int(capsule[int(x + j)][int(y + i)]))
+            # print()
+            # print(part_wall[:5])
+            # print(part_wall[5:10])
+            # print(part_wall[10:15])
+            # print(part_wall[15:20])
+            # print(part_wall[20:25])
+            if self.shared_obs:
+                obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)),part_capsule,part_food,part_wall))
+            else:
+                if agent_index == 0:
+                    obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), part_capsule, part_food, part_wall))
+                else:
+                    obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), part_wall))
+            return obs
 
 
     # def get_action_meanings(self):

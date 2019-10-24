@@ -44,6 +44,9 @@ def parse_args():
     #Newly added arguments
     parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
     parser.add_argument("--layout", type=str, default="mediumClassic") #decide the layout to train
+    parser.add_argument("--obs_type", type=str, default="partial_obs")  # full_obs or partial_obs
+    parser.add_argument("--partial_obs_range", type=int, default=3)  # 3x3,5x5,7x7 ...
+    parser.add_argument("--shared_obs", type=bool, default= True)  # pacman and ghost same observation?
     return parser.parse_args()
 
 def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=None):
@@ -56,8 +59,8 @@ def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=Non
 
     with tf.variable_scope(scope, reuse=reuse):
         out = input
-        out = layers.fully_connected(out, num_outputs=first_layer, activation_fn=tf.nn.relu)
-        out = layers.fully_connected(out, num_outputs=second_layer, activation_fn=tf.nn.relu)
+        out = layers.fully_connected(out, num_outputs=max(num_units,first_layer), activation_fn=tf.nn.relu)
+        out = layers.fully_connected(out, num_outputs=max(num_units,second_layer), activation_fn=tf.nn.relu)
         out = layers.fully_connected(out, num_outputs=num_outputs, activation_fn=None)
         return out
 
@@ -76,7 +79,13 @@ def make_env(scenario_name, arglist, benchmark=False):
     # else:
     #     env = MultiAgentEnv(world, scenario.reset_world, scenario.reward, scenario.observation)
 
-    env = PacmanEnv(arglist.display,arglist.num_adversaries,arglist.max_episode_len,arglist.layout)
+    env = PacmanEnv(arglist.display,
+                    arglist.num_adversaries,
+                    arglist.max_episode_len,
+                    arglist.layout,
+                    arglist.obs_type,
+                    arglist.partial_obs_range,
+                    arglist.shared_obs)
     env.seed(1)
     # env.want_display = True
     return env

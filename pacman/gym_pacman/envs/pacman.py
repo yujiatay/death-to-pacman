@@ -177,7 +177,10 @@ class GameState:
 
         return grid
 
-
+    def getWidth(self):
+        return self.data.layout.width
+    def getHeight(self):
+        return self.data.layout.height
 
 
     def getCapsules(self):
