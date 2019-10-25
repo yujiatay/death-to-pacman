@@ -34,7 +34,7 @@ def parse_args():
                                                                  "loaded")
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False)
-    parser.add_argument("--display", action="store_true", default= True)
+    parser.add_argument("--display", action="store_true", default= False)
     parser.add_argument("--benchmark", action="store_true", default=False)
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data"
@@ -139,7 +139,7 @@ def train(arglist):
         final_ep_rewards = []  # sum of rewards for training curve
         final_ep_ag_rewards = []  # agent rewards for training curve
         agent_info = [[[]]]  # placeholder for benchmarking info
-        saver = tf.train.Saver()
+        saver = tf.train.Saver(max_to_keep=None)
         obs_n = env.reset()
         episode_step = 0
         train_step = 0
@@ -165,11 +165,10 @@ def train(arglist):
                 # agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done_n[i], terminal)
                 agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done, terminal)
             obs_n = new_obs_n
-
+            # print(rew_n)
             for i, rew in enumerate(rew_n):
                 episode_rewards[-1] += rew
                 agent_rewards[i][-1] += rew
-
             if done or terminal:
                 obs_n = env.reset()
                 episode_step = 0

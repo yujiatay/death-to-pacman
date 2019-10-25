@@ -901,7 +901,7 @@ class Game:
                 if reward_n[i] > 0:
                     reward_n[i] = 200
                 else:
-                    reward_n[i] = 100
+                    reward_n[i] = 200
 
         if self.gameOver:
             # inform a learning agent of the game result
