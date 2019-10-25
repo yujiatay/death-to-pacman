@@ -399,6 +399,7 @@ class PacmanEnv(gym.Env):
         agent = agent_states[agent_index]
         for i, other in enumerate(agent_states):
             if i == agent_index:
+                other_vel.append(other.getDirection())
                 continue
             other_pos.append(np.array(other.getPosition()))
             other_vel.append(other.getDirection())
@@ -573,7 +574,6 @@ class PacmanEnv(gym.Env):
 
 
 
-
 class PQ:
     def __init__(self):
         self.minheap = list()
@@ -587,9 +587,6 @@ class PQ:
 
     def is_empty(self):
         return len(self.minheap) == 0
-
-    def get_print(self):
-        return self.minheap
 
 
 class Node:
@@ -614,9 +611,8 @@ class Search(object):
         for i in range(len(self.state)):
             for j in range(len(self.state[i])):
                 if self.state[i][j] == 'T':
-                    self.visited[i][j] == True
+                    self.visited[i][j] = True
                 if self.state[i][j] == 'G':
-                    self.visited[i][j] == True
                     self.ghost_pos = (i, j)
                 if self.state[i][j] == 'P':
                     self.pacman_pos = (i, j)
@@ -655,14 +651,16 @@ class Search(object):
 
     def goal_test(self, node):
         g_row, g_col = node.get_pos()
-        p_row, p_col = self.get_pacman_position()
+        p_row, p_col = self.get_pacman_position() if not None else g_row, g_col
         return (g_row == p_row) and (g_col == p_col)
 
     def straight_line_dist(self, node):
         pacman = self.get_pacman_position()
         ghost = node.get_pos()
+        if pacman == None:
+            return 0
         total = (pacman[0] - ghost[0]) ** 2 + (pacman[1] - ghost[1]) ** 2
-        return round(math.sqrt(total), 2)
+        return math.sqrt(total)
 
     def evaluation(self, node):
         return node.get_moves() + self.straight_line_dist(node)

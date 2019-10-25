@@ -902,9 +902,9 @@ class Game:
             reward_n[0] -= 500
             for i in range(1, len(action_n)):
                 if reward_n[i] > 0:
-                    reward_n[i] = 200
+                    reward_n[i] = 500
                 else:
-                    reward_n[i] = 200
+                    reward_n[i] = 500
 
         if self.gameOver:
             # inform a learning agent of the game result
