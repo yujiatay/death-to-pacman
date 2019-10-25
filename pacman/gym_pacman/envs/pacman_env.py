@@ -301,8 +301,7 @@ class PacmanEnv(gym.Env):
         for i in agent_illegal:
             reward_n[i] -= 10
 
-
-        # print(2,reward_n)
+        #print(2,reward_n)
         # self.cum_reward += reward
         # # reward shaping for illegal actions
         # if illegal_action:
@@ -417,12 +416,9 @@ class PacmanEnv(gym.Env):
         # print(PACMAN_ACTIONS.index(other_vel[0]))
 
         if self.obs_type == 'full_obs':
-            capsule_loc = np.asarray(list(map(int,str(game_states.getCapsules_TF()).replace("T","1").replace("F","0").replace("\n",
-                                                                                                                   ""))))
-            food_loc = np.asarray(list(map(int,str(game_states.getFood()).replace("T","1").replace("F","0").replace("\n",
-                                                                                                                   ""))))
-            wall_loc = np.asarray(list(map(int,str(game_states.getWalls()).replace("T","1").replace("F","0").replace("\n",
-                                                                                                                   ""))))
+            capsule_loc = np.asarray(list(map(int,str(game_states.getCapsules_TF()).replace("T","1").replace("F","0").replace("\n", ""))))
+            food_loc = np.asarray(list(map(int,str(game_states.getFood()).replace("T","1").replace("F","0").replace("\n", ""))))
+            wall_loc = np.asarray(list(map(int,str(game_states.getWalls()).replace("T","1").replace("F","0").replace("\n", ""))))
             # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
             if self.shared_obs:
                 tmp = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos )),
@@ -550,8 +546,9 @@ class PacmanEnv(gym.Env):
         #walls = list(map(lambda x: list(x.replace('T', '1')), walls))
         pacman_pos = agents[0].getPosition()
         walls[pacman_pos[1]][pacman_pos[0]] = 'P'
-        print(1,walls[6])
-        print(2,walls[4])
+        # print(1,walls[6])
+        # print(2,walls[4])
+        print(2, pacman_pos)
         ghost_pos = list(map(lambda x: x.getPosition(), agents[1:]))
         puzzles = []
         for i in range(len(ghost_pos)):
@@ -572,8 +569,6 @@ class PacmanEnv(gym.Env):
             distances.append(search_state.solve())
         return distances
 
-
-
 class PQ:
     def __init__(self):
         self.minheap = list()
@@ -588,6 +583,8 @@ class PQ:
     def is_empty(self):
         return len(self.minheap) == 0
 
+    def get_print(self):
+        return self.minheap
 
 class Node:
     def __init__(self, moves, pos):
@@ -600,7 +597,6 @@ class Node:
     def get_pos(self):
         return self.pos
 
-
 class Search(object):
     def __init__(self, init_state):
         self.state = init_state
@@ -611,7 +607,7 @@ class Search(object):
         for i in range(len(self.state)):
             for j in range(len(self.state[i])):
                 if self.state[i][j] == 'T':
-                    self.visited[i][j] = True
+                    self.visited[i][j] = True 
                 if self.state[i][j] == 'G':
                     self.ghost_pos = (i, j)
                 if self.state[i][j] == 'P':
