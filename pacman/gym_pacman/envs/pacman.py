@@ -87,7 +87,7 @@ class GameState:
         else:
             return GhostRules.getLegalActions( self, agentIndex )
 
-    def generateSuccessor( self, agentIndex, action):
+    def generateSuccessor( self, agentIndex, action,sc):
         """
         Returns the successor state after the specified agent takes the action.
         """
@@ -95,6 +95,7 @@ class GameState:
         if self.isWin() or self.isLose(): raise Exception('Can\'t generate a successor of a terminal state.')
 
         # Copy current state
+
         state = GameState(self)
         reward = 0
         # Let agent's logic deal with its action's effects on the board
@@ -117,16 +118,18 @@ class GameState:
         if agentIndex == 0:
             rew = state.data.scoreChange
         else:
-            rew = -state.data.scoreChange
-            rew -= TIME_PENALTY
+            rew = -sc
+            rew -= 2*TIME_PENALTY
 
         # Book keeping
         state.data._agentMoved = agentIndex
         state.data.score += state.data.scoreChange
         GameState.explored.add(self)
         GameState.explored.add(state)
-        return state, rew
-
+        if agentIndex == 0:
+            return state, rew, state.data.scoreChange
+        else:
+            return state, rew, sc
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
 

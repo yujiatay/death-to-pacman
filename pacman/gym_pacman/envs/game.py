@@ -787,10 +787,11 @@ class Game:
             action 
         """
 
-        old_reward = self.state.getScore()
+        old_score = self.state.getScore()
 
         reward_n = [0] * len(self.agents)
         # Fetch the next agent
+        sc = None
         for agentIndex in range(len(self.agents)):
             if not self.gameOver:
                 action = action_n[agentIndex]
@@ -872,7 +873,8 @@ class Game:
                 self.moveHistory.append((agentIndex, action))
                 if self.catchExceptions:
                     try:
-                        self.state, rew = self.state.generateSuccessor(agentIndex, action)
+                        sc = None
+                        self.state, rew ,sc = self.state.generateSuccessor(agentIndex, action,None)
                     except Exception as data:
                         self.mute(agentIndex)
                         self._agentCrash(agentIndex)
@@ -881,7 +883,8 @@ class Game:
                 else:
                     # TODO: This generateSuccessor alr calculates total reward after each move.
                     # TODO: should return reward then calculate outside... i think
-                    self.state, rew = self.state.generateSuccessor(agentIndex, action)
+
+                    self.state, rew, sc = self.state.generateSuccessor(agentIndex, action, sc)
 
                 # Allow for game specific conditions (winning, losing, etc.)
                 self.rules.process(self.state, self)

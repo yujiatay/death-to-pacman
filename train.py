@@ -34,7 +34,7 @@ def parse_args():
                                                                  "loaded")
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False)
-    parser.add_argument("--display", action="store_true", default= False)
+    parser.add_argument("--display", action="store_true", default= True)
     parser.add_argument("--benchmark", action="store_true", default=False)
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data"
@@ -44,9 +44,13 @@ def parse_args():
     #Newly added arguments
     parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
     parser.add_argument("--layout", type=str, default="mediumClassic") #decide the layout to train
-    parser.add_argument("--obs_type", type=str, default="partial_obs")  # full_obs or partial_obs
+    parser.add_argument("--obs_type", type=str, default="full_obs")  # full_obs or partial_obs
     parser.add_argument("--partial_obs_range", type=int, default=3)  # 3x3,5x5,7x7 ...
     parser.add_argument("--shared_obs", type=bool, default= True)  # pacman and ghost same observation?
+    parser.add_argument("--timeStepObs", type=bool, default= True)  # Do we want 2 time step?
+    parser.add_argument("--astarSearch", type=bool, default= False)  # Do we want 2 time step?
+    parser.add_argument("--astarAlpha", type=int, default= 1)  # Do we want 2 time step?
+
     return parser.parse_args()
 
 def mlp_model(input, num_outputs, scope, reuse=False, num_units=64, rnn_cell=None):
@@ -85,7 +89,10 @@ def make_env(scenario_name, arglist, benchmark=False):
                     arglist.layout,
                     arglist.obs_type,
                     arglist.partial_obs_range,
-                    arglist.shared_obs)
+                    arglist.shared_obs,
+                    arglist.timeStepObs,
+                    arglist.astarSearch,
+                    arglist.astarAlpha)
     env.seed(1)
     # env.want_display = True
     return env
