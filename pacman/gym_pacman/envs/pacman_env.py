@@ -9,15 +9,12 @@ from .game import Actions, AgentState, Configuration
 from .pacman import ClassicGameRules
 from .layout import getLayout, getRandomLayout
 
-from .ghostAgents import DirectionalGhost
 from .pacmanAgents import OpenAIAgent
 
 from gym.utils import seeding
 
 import json
 import os
-
-from multiagent.multi_discrete import MultiDiscrete
 
 DEFAULT_GHOST_TYPE = 'DirectionalGhost'
 
@@ -54,40 +51,18 @@ class PacmanEnv(gym.Env):
     MAX_MAZE_SIZE = (7, 7)
     num_envs = 1
 
-    # TODO: Check if this causes partial observability
-    # observation_space = spaces.Box(low=0, high=255,
-    #         shape=(84, 84, 3), dtype=np.uint8)
+    def __init__(self, numGhosts, want_display = False):
 
-    def __init__(self,want_display = False):
-        self.world = {
-            'dim_c': 2,
-            'dim_p': 2,
-        }
-        self.ghosts = [OpenAIAgent() for i in range(MAX_GHOSTS)]
-        # this agent is just a placeholder for graphics to work
-        self.pacman = OpenAIAgent()
-        self.agents = [self.pacman] + self.ghosts
-        # set required vectorized gym env property
-        self.n = len(self.agents)
-        # scenario callbacks
-        # self.reset_callback = reset_callback
-        # self.reward_callback = reward_callback
-        # self.observation_callback = observation_callback
-        # self.info_callback = info_callback
-        # self.done_callback = done_callback
-        # environment parameters
-        self.discrete_action_space = True
-        # if true, action is a number 0...N, otherwise action is a one-hot N-dimensional vector
-        self.discrete_action_input = False
-        # if true, even the action is continuous, action will be performed discretely
-        # self.force_discrete_action = world.discrete_action if hasattr(world, 'discrete_action') else False
-        self.force_discrete_action = True
-        # if true, every agent has the same reward
+        # # if true, every agent has the same reward
         # self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
-        self.time = 0
-        self.want_display = want_display
+        # # the above flag is used in step() as such:
+        # reward = np.sum(reward_n)
+        # if self.shared_reward:
+        #     reward_n = [reward] * self.n
 
-        # self.action_space = spaces.Discrete(4) # up, down, left right
+        self.want_display = want_display
+        self.n = 1 + numGhosts
+        self.action_space = [spaces.Discrete(5) for i in range(self.n)]
         self.display = PacmanGraphics(1.0) if self.want_display else None
         # self._action_set = range(len(PACMAN_ACTIONS))
         self.location = None
@@ -96,60 +71,13 @@ class PacmanEnv(gym.Env):
         self.layout = None
         self.np_random = None
 
-        self.seed(1)
-        self.rules = ClassicGameRules(300)
-        self.rules.quiet = True
 
-        self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
-                                       self.display, quiet=True, catchExceptions=False)
-        self.game.init()
-        if self.want_display:
-            self.display.initialize(self.game.state.data)
-            self.display.updateView()
-
-        # configure spaces
-        self.action_space = []
-        self.observation_space = []
-        for i, agent in enumerate(self.agents):
-            total_action_space = []
-            # physical action space
-            if self.discrete_action_space:
-                u_action_space = spaces.Discrete(self.world['dim_p'] * 2 + 1)
-            else:
-                u_action_space = spaces.Box(low=-1, high=+1, shape=(2,),
-                                            dtype=np.float32)
-            total_action_space.append(u_action_space)
-            # communication action space
-            if self.discrete_action_space:
-                c_action_space = spaces.Discrete(self.world['dim_c'])
-            else:
-                c_action_space = spaces.Box(low=0.0, high=1.0, shape=(2,), dtype=np.float32)
-            # if not agent.silent:
-            #     total_action_space.append(c_action_space)
-            # total action space
-            if len(total_action_space) > 1:
-                # all action spaces are discrete, so simplify to MultiDiscrete action space
-                if all([isinstance(act_space, spaces.Discrete) for act_space in total_action_space]):
-                    act_space = MultiDiscrete([[0, act_space.n - 1] for act_space in total_action_space])
-                else:
-                    act_space = spaces.Tuple(total_action_space)
-                self.action_space.append(act_space)
-            else:
-                self.action_space.append(total_action_space[0])
-            # observation space
-            obs_dim = len(self.observation(i,  self.game.state.data.agentStates,self.game.state))
-            self.observation_space.append(spaces.Box(low=-np.inf, high=+np.inf, shape=(obs_dim,), dtype=np.float32))
-            # agent.action.c = np.zeros(self.world['dim_c'])
-
-
-
-    # def setObservationSpace(self):
-    #     # TODO: Check if this causes partial observability
-    #     screen_width, screen_height = self.display.calculate_screen_dimensions(self.layout.width,   self.layout.height)
-    #     self.observation_space = spaces.Box(low=0, high=255,
-    #         shape=(int(screen_height),
-    #             int(screen_width),
-    #             3), dtype=np.uint8)
+    def setObservationSpace(self):
+        # TODO set depending on type of obs space
+        self.observation_space = spaces.Box(low=0, high=1,
+                                            shape=(2278,), #temp using old observation
+                                            #shape=(2 * 6 * self.layout.height * self.layout.width,),
+                                            dtype=np.uint8)
 
     def chooseLayout(self, randomLayout=True,
         chosenLayout=None, no_ghosts=True):
@@ -182,10 +110,11 @@ class PacmanEnv(gym.Env):
         self.step_counter = 0
         self.cum_reward = 0
         self.done = False
-        #
-        # self.ghosts = [OpenAIAgent() for _ in range(MAX_GHOSTS)]
-        # # this agent is just a placeholder for graphics to work
-        # self.pacman = OpenAIAgent()
+        self.setObservationSpace()
+
+        # this agent is just a placeholder for graphics to work
+        self.ghosts = [OpenAIAgent() for i in range(self.n - 1)]
+        self.pacman = OpenAIAgent()
 
         self.rules = ClassicGameRules(300)
         self.rules.quiet = True
@@ -199,7 +128,6 @@ class PacmanEnv(gym.Env):
 
         self.location = self.game.state.data.agentStates[0].getPosition()
         self.ghostLocations = [a.getPosition() for a in self.game.state.data.agentStates[1:]]
-        # self.ghostInFrame = any([np.sum(np.abs(np.array(g) - np.array(self.location))) <= 2 for g in self.ghostLocations])
 
         self.location_history = [self.location]
         self.orientation = PACMAN_DIRECTIONS.index(self.game.state.data.agentStates[0].getDirection())
@@ -217,11 +145,9 @@ class PacmanEnv(gym.Env):
             'curr_orientation': [[self.orientation_history[-1]]],
             'illegal_move_counter': [self.illegal_move_counter],
             'ghost_positions': [self.ghostLocations],
-            # 'ghost_in_frame': [self.ghostInFrame],
             'step_counter': [[0]],
         }
 
-        # return self._get_image()
         return obs_n
 
     def step(self, action_n):
@@ -308,6 +234,7 @@ class PacmanEnv(gym.Env):
             }]
         return obs_n, reward_n, done, info
 
+    #FROM SIMPLE_TAG
     # def agent_reward(self):
     #     # Agents are negatively rewarded if caught by adversaries
     #     rew = 0
@@ -375,10 +302,6 @@ class PacmanEnv(gym.Env):
         # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
 
         return np.concatenate( ( np.concatenate(([agent.getPosition()] + other_pos)),capsule_loc,food_loc,wall_loc) )
-
-
-    # def get_action_meanings(self):
-    #     return [PACMAN_ACTIONS[i] for i in self._action_set]
 
     # just change the get image function
     def _get_image(self):
