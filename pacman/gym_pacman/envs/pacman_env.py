@@ -548,7 +548,7 @@ class PacmanEnv(gym.Env):
         walls[pacman_pos[1]][pacman_pos[0]] = 'P'
         # print(1,walls[6])
         # print(2,walls[4])
-        print(2, pacman_pos)
+        # print(2, pacman_pos)
         ghost_pos = list(map(lambda x: x.getPosition(), agents[1:]))
         puzzles = []
         for i in range(len(ghost_pos)):
@@ -618,19 +618,22 @@ class Search(object):
         start = Node(0, self.get_ghost_position())
         pq.push(self.evaluation(start), 0, start)
         counter = 1
-        while not pq.is_empty():
-            priority, num, node = pq.pop()
-            row, col = node.get_pos()
-            if self.goal_test(node):
-                return node.get_moves()
-            if self.visited[row][col] == True:
-                continue
-            self.visited[row][col] = True
-            for successor in self.get_successors(node):
-                s_row, s_col = successor.get_pos()
-                if self.visited[s_row][s_col] == False:
-                    pq.push(self.evaluation(successor), counter, successor)
-                    counter += 1
+        if self.straight_line_dist(start) == 0:
+            return 0
+        else:
+            while not pq.is_empty():
+                priority, num, node = pq.pop()
+                row, col = node.get_pos()
+                if self.goal_test(node):
+                    return node.get_moves()
+                if self.visited[row][col] == True:
+                    continue
+                self.visited[row][col] = True
+                for successor in self.get_successors(node):
+                    s_row, s_col = successor.get_pos()
+                    if self.visited[s_row][s_col] == False:
+                        pq.push(self.evaluation(successor), counter, successor)
+                        counter += 1
         return -1
 
     def get_pacman_position(self):
@@ -647,7 +650,7 @@ class Search(object):
 
     def goal_test(self, node):
         g_row, g_col = node.get_pos()
-        p_row, p_col = self.get_pacman_position() if not None else g_row, g_col
+        p_row, p_col = self.get_pacman_position()
         return (g_row == p_row) and (g_col == p_col)
 
     def straight_line_dist(self, node):
@@ -656,7 +659,8 @@ class Search(object):
         if pacman == None:
             return 0
         total = (pacman[0] - ghost[0]) ** 2 + (pacman[1] - ghost[1]) ** 2
-        return math.sqrt(total)
+        return round(math.sqrt(total), 2)
+
 
     def evaluation(self, node):
         return node.get_moves() + self.straight_line_dist(node)
