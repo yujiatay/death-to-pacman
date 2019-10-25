@@ -118,7 +118,7 @@ class GameState:
             rew = state.data.scoreChange
         else:
             rew = -state.data.scoreChange
-            rew -= 2*TIME_PENALTY
+            rew -= TIME_PENALTY
 
         # Book keeping
         state.data._agentMoved = agentIndex
