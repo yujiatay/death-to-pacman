@@ -1,25 +1,18 @@
-import gym
-from gym import spaces
-from gym.utils import seeding
-import numpy as np
-
-from .graphicsDisplay import PacmanGraphics, DEFAULT_GRID_SIZE
-
-from .game import Actions, AgentState, Configuration
-from .pacman import ClassicGameRules
-from .layout import getLayout, getRandomLayout
-
-from .pacmanAgents import OpenAIAgent
-
-from gym.utils import seeding
-
+import copy
+import heapq
 import json
+import math
 import os
 
-import math
-import heapq
+import gym
+import numpy as np
+from gym import spaces
+from gym.utils import seeding
 
-import copy
+from .graphicsDisplay import PacmanGraphics
+from .layout import getLayout, getRandomLayout
+from .pacman import ClassicGameRules
+from .pacmanAgents import OpenAIAgent
 
 DEFAULT_GHOST_TYPE = 'DirectionalGhost'
 
@@ -36,7 +29,7 @@ layout_params = json.load(open(fdir + '/../../layout_params.json'))
 print("Layout parameters")
 print("------------------")
 for k in layout_params:
-    print(k,":",layout_params[k])
+    print(k, ":", layout_params[k])
 print("------------------")
 
 
@@ -52,9 +45,9 @@ class PacmanEnv(gym.Env):
     MAX_MAZE_SIZE = (7, 7)
     num_envs = 1
 
-    def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH,game_layout,obs_type,partial_obs_range,shared_obs,
-                 timeStepObs,astarSearch,astarAlpha):
-        #Newly added
+    def __init__(self, want_display, MAX_GHOSTS, MAX_EP_LENGTH, game_layout, obs_type, partial_obs_range, shared_obs,
+                 timeStepObs, astarSearch, astarAlpha):
+        # Newly added
         self.MAX_GHOSTS = MAX_GHOSTS
         self.MAX_EP_LENGTH = MAX_EP_LENGTH
         self.game_layout = game_layout
@@ -62,8 +55,8 @@ class PacmanEnv(gym.Env):
         self.partial_obs_range = partial_obs_range
         self.shared_obs = shared_obs
         self.timeStepObs = timeStepObs
-        self.astarSearch= astarSearch
-        self.astarAlpha=astarAlpha
+        self.astarSearch = astarSearch
+        self.astarAlpha = astarAlpha
         self.ghosts = [OpenAIAgent() for i in range(self.MAX_GHOSTS)]
         self.pacman = OpenAIAgent()
         # this agent is just a placeholder for graphics to work
@@ -88,7 +81,7 @@ class PacmanEnv(gym.Env):
         self.np_random = None
 
     def chooseLayout(self, randomLayout=True,
-        chosenLayout=None, no_ghosts=True):
+                     chosenLayout=None, no_ghosts=True):
 
         if randomLayout:
             self.layout = getRandomLayout(layout_params, self.np_random)
@@ -107,13 +100,13 @@ class PacmanEnv(gym.Env):
         if self.np_random is None:
             self.np_random, seed = seeding.np_random(seed)
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout= self.game_layout)
+        self.chooseLayout(randomLayout=False, chosenLayout=self.game_layout)
         print(self.layout)
         return [seed]
 
     def reset(self, layout=None):
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout= self.game_layout)
+        self.chooseLayout(randomLayout=False, chosenLayout=self.game_layout)
 
         self.step_counter = 0
         self.cum_reward = 0
@@ -127,7 +120,7 @@ class PacmanEnv(gym.Env):
         self.rules.quiet = True
 
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
-            self.display, quiet=True, catchExceptions=False)
+                                       self.display, quiet=True, catchExceptions=False)
         self.game.init()
         if self.want_display:
             self.display.initialize(self.game.state.data)
@@ -196,7 +189,7 @@ class PacmanEnv(gym.Env):
                     max_val = act
                     best_move = j
             # print("best move for index ", i, " is ", best_move)
-            if original_best_move!=best_move:
+            if original_best_move != best_move:
                 agent_illegal.append(i)
             agents_actions.append(best_move)
         # print("agent_actions", agents_actions)
@@ -204,18 +197,16 @@ class PacmanEnv(gym.Env):
 
         reward_n = self.game.step(agents_actions)
 
-
         if self.astarSearch:
             steps_to_pacman = self.call_search(self.game.state.data.agentStates, self.game.state)
-            print(1,steps_to_pacman)
-            for i,steps in enumerate(steps_to_pacman):
-                reward_n[i+1] -= self.astarAlpha*steps
-
+            print(1, steps_to_pacman)
+            for i, steps in enumerate(steps_to_pacman):
+                reward_n[i + 1] -= self.astarAlpha * steps
 
         for i in agent_illegal:
             reward_n[i] -= 10
 
-        #print(2,reward_n)
+        # print(2,reward_n)
         # self.cum_reward += reward
         # # reward shaping for illegal actions
         # if illegal_action:
@@ -253,7 +244,7 @@ class PacmanEnv(gym.Env):
 
         self.done = done
 
-        if self.done: # only if done, send 'episode' info
+        if self.done:  # only if done, send 'episode' info
             info['episode'] = [{
                 'r': self.cum_reward,
                 'l': self.step_counter
@@ -286,13 +277,16 @@ class PacmanEnv(gym.Env):
         # print(PACMAN_ACTIONS.index(other_vel[0]))
 
         if self.obs_type == 'full_obs':
-            capsule_loc = np.asarray(list(map(int,str(game_states.getCapsules_TF()).replace("T","1").replace("F","0").replace("\n", ""))))
-            food_loc = np.asarray(list(map(int,str(game_states.getFood()).replace("T","1").replace("F","0").replace("\n", ""))))
-            wall_loc = np.asarray(list(map(int,str(game_states.getWalls()).replace("T","1").replace("F","0").replace("\n", ""))))
+            capsule_loc = np.asarray(
+                list(map(int, str(game_states.getCapsules_TF()).replace("T", "1").replace("F", "0").replace("\n", ""))))
+            food_loc = np.asarray(
+                list(map(int, str(game_states.getFood()).replace("T", "1").replace("F", "0").replace("\n", ""))))
+            wall_loc = np.asarray(
+                list(map(int, str(game_states.getWalls()).replace("T", "1").replace("F", "0").replace("\n", ""))))
             # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
             if self.shared_obs:
-                tmp = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos )),
-                                      other_vel,capsule_loc,
+                tmp = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)),
+                                      other_vel, capsule_loc,
                                       food_loc, wall_loc,
                                       scared_array))
                 if self.prev_obs[agent_index] == []:
@@ -307,7 +301,7 @@ class PacmanEnv(gym.Env):
                 if agent_index == 0:
                     tmp = np.concatenate(
                         (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, capsule_loc, food_loc,
-                         wall_loc,scared_array))
+                         wall_loc, scared_array))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
                     if self_timeStepObs:
@@ -317,7 +311,7 @@ class PacmanEnv(gym.Env):
                         obs = tmp
                 else:
                     tmp = np.concatenate(
-                        (np.concatenate(([agent.getPosition()] + other_pos)), other_vel,wall_loc,scared_array))
+                        (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, wall_loc, scared_array))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
                     if self_timeStepObs:
@@ -333,36 +327,36 @@ class PacmanEnv(gym.Env):
             part_food = []
             part_capsule = []
 
-            width,height = game_states.getWidth(),game_states.getHeight()
+            width, height = game_states.getWidth(), game_states.getHeight()
 
             wall = game_states.getWalls()
             food = game_states.getFood()
             capsule = game_states.getCapsules_TF()
-            x,y = agent.getPosition()[0], agent.getPosition()[1]
-            diff = (partial_size - 3)//2
+            x, y = agent.getPosition()[0], agent.getPosition()[1]
+            diff = (partial_size - 3) // 2
 
-            for i in range(1+diff,-2-diff,-1):
-                for j in range(-1-diff,2+diff):
-                    if y+i<=0 or y+i>=height or x+j<=0 or x+j>=width:
+            for i in range(1 + diff, -2 - diff, -1):
+                for j in range(-1 - diff, 2 + diff):
+                    if y + i <= 0 or y + i >= height or x + j <= 0 or x + j >= width:
                         part_wall.append(1)
                         part_food.append(0)
                         part_capsule.append(0)
                     else:
-                        part_wall.append(int(wall[int(x+j)][int(y+i)]))
+                        part_wall.append(int(wall[int(x + j)][int(y + i)]))
                         part_food.append(int(food[int(x + j)][int(y + i)]))
                         part_capsule.append(int(capsule[int(x + j)][int(y + i)]))
 
             if self.shared_obs:
-                obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), other_vel,part_capsule,
-                                      part_food,part_wall,scared_array))
+                obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), other_vel, part_capsule,
+                                      part_food, part_wall, scared_array))
             else:
                 if agent_index == 0:
                     obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), other_vel,
-                                          part_capsule, part_food, part_wall,scared_array))
+                                          part_capsule, part_food, part_wall, scared_array))
                 else:
-                    obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), other_vel, part_wall,scared_array))
+                    obs = np.concatenate(
+                        (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, part_wall, scared_array))
             return obs
-
 
     # def get_action_meanings(self):
     #     return [PACMAN_ACTIONS[i] for i in self._action_set]
@@ -376,10 +370,10 @@ class PacmanEnv(gym.Env):
         DEFAULT_GRID_SIZE_X, DEFAULT_GRID_SIZE_Y = w / float(self.layout.width), h / float(self.layout.height)
 
         extent = [
-            DEFAULT_GRID_SIZE_X *  (self.location[0] - 1),
-            DEFAULT_GRID_SIZE_Y *  (self.layout.height - (self.location[1] + 2.2)),
-            DEFAULT_GRID_SIZE_X *  (self.location[0] + 2),
-            DEFAULT_GRID_SIZE_Y *  (self.layout.height - (self.location[1] - 1.2))]
+            DEFAULT_GRID_SIZE_X * (self.location[0] - 1),
+            DEFAULT_GRID_SIZE_Y * (self.layout.height - (self.location[1] + 2.2)),
+            DEFAULT_GRID_SIZE_X * (self.location[0] + 2),
+            DEFAULT_GRID_SIZE_Y * (self.layout.height - (self.location[1] - 1.2))]
         extent = tuple([int(e) for e in extent])
 
         # self.image_sz = (84,84)
@@ -413,7 +407,7 @@ class PacmanEnv(gym.Env):
     def call_search(self, agents, game_state):
         walls = list(map(list, str(game_state.getWalls()).split('\n')))
         walls.reverse()
-        #walls = list(map(lambda x: list(x.replace('T', '1')), walls))
+        # walls = list(map(lambda x: list(x.replace('T', '1')), walls))
         pacman_pos = agents[0].getPosition()
         walls[pacman_pos[1]][pacman_pos[0]] = 'P'
         # print(1,walls[6])
@@ -430,7 +424,7 @@ class PacmanEnv(gym.Env):
             new_puzzle[int(row)][int(col)] = 'G'
             for j in range(len(ghost_pos)):
                 if ghost_pos[i] != ghost_pos[j]:
-                    col2, row2= ghost_pos[j]
+                    col2, row2 = ghost_pos[j]
                     new_puzzle[int(row2)][int(col2)] = 'T'
             puzzles.append(new_puzzle)
         distances = []
@@ -438,6 +432,7 @@ class PacmanEnv(gym.Env):
             search_state = Search(k)
             distances.append(search_state.solve())
         return distances
+
 
 class PQ:
     def __init__(self):
@@ -456,6 +451,7 @@ class PQ:
     def get_print(self):
         return self.minheap
 
+
 class Node:
     def __init__(self, moves, pos):
         self.moves = moves
@@ -467,6 +463,7 @@ class Node:
     def get_pos(self):
         return self.pos
 
+
 class Search(object):
     def __init__(self, init_state):
         self.state = init_state
@@ -477,7 +474,7 @@ class Search(object):
         for i in range(len(self.state)):
             for j in range(len(self.state[i])):
                 if self.state[i][j] == 'T':
-                    self.visited[i][j] = True 
+                    self.visited[i][j] = True
                 if self.state[i][j] == 'G':
                     self.ghost_pos = (i, j)
                 if self.state[i][j] == 'P':
@@ -530,7 +527,6 @@ class Search(object):
             return 0
         total = (pacman[0] - ghost[0]) ** 2 + (pacman[1] - ghost[1]) ** 2
         return round(math.sqrt(total), 2)
-
 
     def evaluation(self, node):
         return node.get_moves() + self.straight_line_dist(node)
