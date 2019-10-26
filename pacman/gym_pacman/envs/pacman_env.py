@@ -304,7 +304,7 @@ class PacmanEnv(gym.Env):
                          wall_loc, scared_array))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
-                    if self_timeStepObs:
+                    if self.timeStepObs:
                         obs = np.concatenate((self.prev_obs[agent_index], tmp))
                         self.prev_obs[agent_index] = tmp
                     else:
@@ -314,7 +314,7 @@ class PacmanEnv(gym.Env):
                         (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, wall_loc, scared_array))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
-                    if self_timeStepObs:
+                    if self.timeStepObs:
                         obs = np.concatenate((self.prev_obs[agent_index], tmp))
                         self.prev_obs[agent_index] = tmp
                     else:
