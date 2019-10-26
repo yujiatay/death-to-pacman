@@ -21,10 +21,7 @@ import heapq
 
 import copy
 
-from multiagent.multi_discrete import MultiDiscrete
-
 DEFAULT_GHOST_TYPE = 'DirectionalGhost'
-
 
 PACMAN_ACTIONS = ['North', 'South', 'East', 'West', 'Stop']
 pacman_actions_index = [0, 1, 2, 3, 4]
@@ -32,8 +29,6 @@ pacman_actions_index = [0, 1, 2, 3, 4]
 PACMAN_DIRECTIONS = ['North', 'South', 'East', 'West']
 ROTATION_ANGLES = [0, 180, 90, 270]
 
-
-import os
 fdir = '/'.join(os.path.split(__file__)[:-1])
 print(fdir)
 layout_params = json.load(open(fdir + '/../../layout_params.json'))
@@ -43,6 +38,7 @@ print("------------------")
 for k in layout_params:
     print(k,":",layout_params[k])
 print("------------------")
+
 
 class PacmanEnv(gym.Env):
     layouts = [
@@ -55,8 +51,6 @@ class PacmanEnv(gym.Env):
 
     MAX_MAZE_SIZE = (7, 7)
     num_envs = 1
-
-    def __init__(self, numGhosts, want_display = False):
 
     def __init__(self,want_display,MAX_GHOSTS,MAX_EP_LENGTH,game_layout,obs_type,partial_obs_range,shared_obs,
                  timeStepObs,astarSearch,astarAlpha):
@@ -93,14 +87,6 @@ class PacmanEnv(gym.Env):
         self.layout = None
         self.np_random = None
 
-
-    def setObservationSpace(self):
-        # TODO set depending on type of obs space
-        self.observation_space = spaces.Box(low=0, high=1,
-                                            shape=(2278,), #temp using old observation
-                                            #shape=(2 * 6 * self.layout.height * self.layout.width,),
-                                            dtype=np.uint8)
-
     def chooseLayout(self, randomLayout=True,
         chosenLayout=None, no_ghosts=True):
 
@@ -132,7 +118,6 @@ class PacmanEnv(gym.Env):
         self.step_counter = 0
         self.cum_reward = 0
         self.done = False
-        self.setObservationSpace()
 
         # this agent is just a placeholder for graphics to work
         self.ghosts = [OpenAIAgent() for i in range(self.n - 1)]
@@ -274,51 +259,6 @@ class PacmanEnv(gym.Env):
                 'l': self.step_counter
             }]
         return obs_n, reward_n, done, info
-
-    #FROM SIMPLE_TAG
-    # def agent_reward(self):
-    #     # Agents are negatively rewarded if caught by adversaries
-    #     rew = 0
-    #     shape = False
-    #     agent = self.pacman
-    #     adversaries = self.ghosts
-    #     if shape:  # reward can optionally be shaped (increased reward for increased distance from adversary)
-    #         for adv in adversaries:
-    #             rew += 0.1 * np.sqrt(np.sum(np.square(agent.state.p_pos - adv.state.p_pos)))
-    #     if agent.collide:
-    #         for a in adversaries:
-    #             if self.is_collision(a, agent):
-    #                 rew -= 10
-    #
-    #     # agents are penalized for exiting the screen, so that they can be caught by the adversaries
-    #     def bound(x):
-    #         if x < 0.9:
-    #             return 0
-    #         if x < 1.0:
-    #             return (x - 0.9) * 10
-    #         return min(np.exp(2 * x - 2), 10)
-    #     for p in range(self.world.dim_p):
-    #         x = abs(agent.state.p_pos[p])
-    #         rew -= bound(x)
-    #
-    #     return rew
-    #
-    # def adversary_reward(self, agentIndex):
-    #     # Adversaries are rewarded for collisions with agents
-    #     rew = 0
-    #     shape = False
-    #     agents = self.pacman
-    #     adversaries = self.ghosts
-    #     agent = adversaries[agentIndex]
-    #     if shape:  # reward can optionally be shaped (decreased reward for increased distance from agents)
-    #         for adv in adversaries:
-    #             rew -= 0.1 * min([np.sqrt(np.sum(np.square(a.state.p_pos - adv.state.p_pos))) for a in agents])
-    #     if agent.collide:
-    #         for ag in agents:
-    #             for adv in adversaries:
-    #                 if self.is_collision(ag, adv):
-    #                     rew += 10
-    #     return rew
 
     def observation(self, agent_index, agent_states, game_states):
         comm = []
