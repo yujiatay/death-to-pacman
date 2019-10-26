@@ -526,7 +526,7 @@ class Search(object):
     def straight_line_dist(self, node):
         pacman = self.get_pacman_position()
         ghost = node.get_pos()
-        if pacman == None:
+        if pacman == None or ghost == None:
             return 0
         total = (pacman[0] - ghost[0]) ** 2 + (pacman[1] - ghost[1]) ** 2
         return round(math.sqrt(total), 2)
