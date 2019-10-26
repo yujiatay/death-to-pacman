@@ -45,23 +45,18 @@ class PacmanEnv(gym.Env):
     MAX_MAZE_SIZE = (7, 7)
     num_envs = 1
 
-    def __init__(self, want_display, MAX_GHOSTS, MAX_EP_LENGTH, game_layout, obs_type, partial_obs_range, shared_obs,
+    def __init__(self, want_display, numGhosts, MAX_EP_LENGTH, chosen_layout, obs_type, partial_obs_range, shared_obs,
                  timeStepObs, astarSearch, astarAlpha):
         # Newly added
-        self.MAX_GHOSTS = MAX_GHOSTS
         self.MAX_EP_LENGTH = MAX_EP_LENGTH
-        self.game_layout = game_layout
         self.obs_type = obs_type
         self.partial_obs_range = partial_obs_range
         self.shared_obs = shared_obs
         self.timeStepObs = timeStepObs
         self.astarSearch = astarSearch
         self.astarAlpha = astarAlpha
-        self.ghosts = [OpenAIAgent() for i in range(self.MAX_GHOSTS)]
-        self.pacman = OpenAIAgent()
-        # this agent is just a placeholder for graphics to work
-        self.agents = [self.pacman] + self.ghosts
-        self.n = len(self.agents)
+        self.chooseLayout(randomLayout=chosen_layout == "random", chosenLayout=chosen_layout)
+        self.n = min(numGhosts + 1, self.layout.getNumGhosts() + 1)  # num of ghosts may be limited by map
         # set required vectorized gym env property
         self.prev_obs = [[] for i in range(self.n)]
         # self.shared_reward = world.collaborative if hasattr(world, 'collaborative') else False
@@ -77,7 +72,6 @@ class PacmanEnv(gym.Env):
         self.location = None
         self.viewer = None
         self.done = False
-        self.layout = None
         self.np_random = None
 
     def chooseLayout(self, randomLayout=True,
@@ -100,14 +94,11 @@ class PacmanEnv(gym.Env):
         if self.np_random is None:
             self.np_random, seed = seeding.np_random(seed)
         # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout=self.game_layout)
+        self.chooseLayout(randomLayout=False, chosenLayout=self.chosen_layout)
         print(self.layout)
         return [seed]
 
     def reset(self, layout=None):
-        # self.chooseLayout(randomLayout=True)
-        self.chooseLayout(randomLayout=False, chosenLayout=self.game_layout)
-
         self.step_counter = 0
         self.cum_reward = 0
         self.done = False
@@ -119,6 +110,7 @@ class PacmanEnv(gym.Env):
         self.rules = ClassicGameRules(300)
         self.rules.quiet = True
 
+        # note that num of ghosts can be trimmed inside here based on the layout
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
                                        self.display, quiet=True, catchExceptions=False)
         self.game.init()
@@ -135,6 +127,10 @@ class PacmanEnv(gym.Env):
         self.illegal_move_counter = 0
 
         obs_n = [self.observation(i, self.game.state.data.agentStates, self.game.state) for i in range(self.n)]
+        if self.observation_space is None:  # first run initialization
+            self.observation_space = spaces.Box(low=0, high=max(self.layout.width, self.layout.height),
+                                                shape=(len(obs_n[0]),),
+                                                dtype=np.uint8)
 
         self.cum_reward = 0
 
@@ -199,7 +195,7 @@ class PacmanEnv(gym.Env):
 
         if self.astarSearch:
             steps_to_pacman = self.call_search(self.game.state.data.agentStates, self.game.state)
-            print(1, steps_to_pacman)
+            #  print(1, steps_to_pacman)
             for i, steps in enumerate(steps_to_pacman):
                 reward_n[i + 1] -= self.astarAlpha * steps
 

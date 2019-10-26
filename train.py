@@ -35,7 +35,7 @@ def parse_args():
                                                                  "loaded")
     # Evaluation
     parser.add_argument("--restore", action="store_true", default=False)
-    parser.add_argument("--display", action="store_true", default= True)
+    parser.add_argument("--display", action="store_true", default=False)
     parser.add_argument("--benchmark", action="store_true", default=False)
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data"
@@ -75,7 +75,7 @@ def make_env(scenario_name, arglist, benchmark=False):
     env = PacmanEnv(arglist.display,
                     arglist.num_adversaries,
                     arglist.max_episode_len,
-                    arglist.layout,
+                    arglist.layout,  # for random, put string "random"
                     arglist.obs_type,
                     arglist.partial_obs_range,
                     arglist.shared_obs,
@@ -107,6 +107,7 @@ def train(arglist):
     with U.single_threaded_session():
         # Create environment
         env = make_env(arglist.scenario, arglist, arglist.benchmark)
+        obs_n = env.reset()  # so that env.observation_space is initialized so trainers can be initialized
         # Create agent trainers
         num_adversaries = arglist.num_adversaries
         obs_shape_n = [env.observation_space.shape for i in range(env.n)]
@@ -137,7 +138,6 @@ def train(arglist):
         final_ep_ag_rewards = []  # agent rewards for training curve
         agent_info = [[[]]]  # placeholder for benchmarking info
         saver = tf.train.Saver(max_to_keep=None)
-        obs_n = env.reset()
         episode_step = 0
         train_step = 0
         t_start = time.time()
