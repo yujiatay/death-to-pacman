@@ -174,8 +174,8 @@ def train(arglist):
 
             # increment global step counter
             train_step += 1
-            if train_step % 1000 == 0:
-                print(train_step)
+            # if train_step % 1000 == 0:
+            #     print(train_step)
             # for benchmarking learned policies
             if arglist.benchmark:
                 for i, info in enumerate(info_n):
