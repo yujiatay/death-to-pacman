@@ -106,6 +106,7 @@ class PacmanEnv(gym.Env):
         # this agent is just a placeholder for graphics to work
         self.ghosts = [OpenAIAgent() for i in range(self.n - 1)]
         self.pacman = OpenAIAgent()
+        self.agents = [self.pacman] + self.ghosts
 
         self.rules = ClassicGameRules(300)
         self.rules.quiet = True
@@ -127,10 +128,14 @@ class PacmanEnv(gym.Env):
         self.illegal_move_counter = 0
 
         obs_n = [self.observation(i, self.game.state.data.agentStates, self.game.state) for i in range(self.n)]
+
         if self.observation_space is None:  # first run initialization
-            self.observation_space = spaces.Box(low=0, high=max(self.layout.width, self.layout.height),
-                                                shape=(len(obs_n[0]),),
-                                                dtype=np.uint8)
+            self.observation_space = []
+            for i in range(self.n):
+                self.observation_space.append(spaces.Box(low=0, high=max(self.layout.width, self.layout.height),
+                                                shape=(len(obs_n[i]),),
+                                                dtype=np.uint8))
+            self.observation_space = np.array(self.observation_space)
 
         self.cum_reward = 0
 
@@ -253,12 +258,14 @@ class PacmanEnv(gym.Env):
         other_vel = []
         scared_array = []
         agent = agent_states[agent_index]
+
         for i, other in enumerate(agent_states):
             if i == agent_index:
                 other_vel.append(other.getDirection())
                 continue
             other_pos.append(np.array(other.getPosition()))
             other_vel.append(other.getDirection())
+
         for i, other in enumerate(agent_states):
             if i == 0:
                 continue
@@ -268,6 +275,15 @@ class PacmanEnv(gym.Env):
 
         for i in range(len(other_vel)):
             other_vel[i] = PACMAN_ACTIONS.index(other_vel[i])
+
+        one_hot_vel = []
+        for i in other_vel:
+            one_hot = [0]*(5)
+            one_hot[i] = 1
+            one_hot_vel.extend(one_hot)
+        one_hot_vel = np.array(one_hot_vel)
+
+
 
         # if agent_index == 0: print(other_vel)
         # print(PACMAN_ACTIONS.index(other_vel[0]))
@@ -280,9 +296,17 @@ class PacmanEnv(gym.Env):
             wall_loc = np.asarray(
                 list(map(int, str(game_states.getWalls()).replace("T", "1").replace("F", "0").replace("\n", ""))))
             # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
+
+            all_agent_grid = []
+            for i in range(len(agent_states)):
+                agent_grid = list(map(int,str(game_states.getAgent_grid(i)).replace("T", "1").replace("F","0").replace("\n", "")))
+                all_agent_grid.extend(agent_grid)
+            all_agent_grid = np.array(all_agent_grid)
+
+
             if self.shared_obs:
-                tmp = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)),
-                                      other_vel, capsule_loc,
+                tmp = np.concatenate((all_agent_grid,
+                                      one_hot_vel, capsule_loc,
                                       food_loc, wall_loc,
                                       scared_array))
                 if self.prev_obs[agent_index] == []:
@@ -295,9 +319,9 @@ class PacmanEnv(gym.Env):
                     obs = tmp
             else:
                 if agent_index == 0:
-                    tmp = np.concatenate(
-                        (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, capsule_loc, food_loc,
-                         wall_loc, scared_array))
+                    tmp = np.concatenate((all_agent_grid,one_hot_vel,
+                                          capsule_loc, food_loc,
+                                          wall_loc, scared_array))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
                     if self.timeStepObs:
@@ -306,8 +330,8 @@ class PacmanEnv(gym.Env):
                     else:
                         obs = tmp
                 else:
-                    tmp = np.concatenate(
-                        (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, wall_loc, scared_array))
+                    tmp = np.concatenate((all_agent_grid,one_hot_vel,
+                                          wall_loc, scared_array))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
                     if self.timeStepObs:
@@ -322,14 +346,22 @@ class PacmanEnv(gym.Env):
             part_wall = []
             part_food = []
             part_capsule = []
-
+            numAgent = len(agent_states)
             width, height = game_states.getWidth(), game_states.getHeight()
 
             wall = game_states.getWalls()
             food = game_states.getFood()
             capsule = game_states.getCapsules_TF()
+
+            all_agent_grid = []
+            for i in range(numAgent):
+                agent_grid = game_states.getAgent_grid(i)
+                all_agent_grid.append(agent_grid)
+
             x, y = agent.getPosition()[0], agent.getPosition()[1]
             diff = (partial_size - 3) // 2
+
+            partial_all_agent=[[]for i in range(numAgent)]
 
             for i in range(1 + diff, -2 - diff, -1):
                 for j in range(-1 - diff, 2 + diff):
@@ -337,21 +369,27 @@ class PacmanEnv(gym.Env):
                         part_wall.append(1)
                         part_food.append(0)
                         part_capsule.append(0)
+                        for k in range(numAgent):
+                            partial_all_agent[k].append(0)
                     else:
                         part_wall.append(int(wall[int(x + j)][int(y + i)]))
                         part_food.append(int(food[int(x + j)][int(y + i)]))
                         part_capsule.append(int(capsule[int(x + j)][int(y + i)]))
+                        for k in range(numAgent):
+                            tmp = all_agent_grid[k]
+                            partial_all_agent[k].append(int(tmp[int(x + j)][int(y + i)]))
+
+            partial_all_agent =np.concatenate(partial_all_agent)
 
             if self.shared_obs:
-                obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), other_vel, part_capsule,
+                obs = np.concatenate((partial_all_agent, one_hot_vel, part_capsule,
                                       part_food, part_wall, scared_array))
             else:
                 if agent_index == 0:
-                    obs = np.concatenate((np.concatenate(([agent.getPosition()] + other_pos)), other_vel,
+                    obs = np.concatenate((partial_all_agent, one_hot_vel,
                                           part_capsule, part_food, part_wall, scared_array))
                 else:
-                    obs = np.concatenate(
-                        (np.concatenate(([agent.getPosition()] + other_pos)), other_vel, part_wall, scared_array))
+                    obs = np.concatenate((partial_all_agent, one_hot_vel, part_wall, scared_array))
             return obs
 
     # def get_action_meanings(self):

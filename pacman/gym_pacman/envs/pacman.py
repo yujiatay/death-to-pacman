@@ -172,6 +172,14 @@ class GameState:
 
     def getScore( self ):
         return float(self.data.score)
+
+    def getAgent_grid(self,agent_index):
+        agent_pos = self.data.agentStates[agent_index].getPosition()
+        grid = Grid(self.data.layout.width, self.data.layout.height, False)
+        grid[int(agent_pos[0])][int(agent_pos[1])] = True
+        return grid
+
+
     def getCapsules_TF(self):
         capsules_pos = self.getCapsules()
         grid = Grid(self.data.layout.width, self.data.layout.height, False)

@@ -15,7 +15,7 @@ def parse_args():
     # Environment
     parser.add_argument("--scenario", type=str, default="simple", help="name of the scenario script")
     parser.add_argument("--max-episode-len", type=int, default=100, help="maximum episode length")
-    parser.add_argument("--num-episodes", type=int, default=300000, help="number of episodes")
+    parser.add_argument("--num-episodes", type=int, default=200000, help="number of episodes")
     parser.add_argument("--num-adversaries", type=int, default=2, help="number of adversaries")
     parser.add_argument("--good-policy", type=str, default="ddpg", help="policy for good agents")
     parser.add_argument("--adv-policy", type=str, default="maddpg", help="policy of adversaries")
@@ -25,7 +25,7 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=1024, help="number of episodes to optimize at the same time")
     parser.add_argument("--num-units", type=int, default=64, help="number of units in the mlp")
     # Checkpointing
-    parser.add_argument("--exp-name", type=str, default=None, help="name of the experiment")
+    parser.add_argument("--exp-name", type=str, default="PlaceHolder", help="name of the experiment")
     parser.add_argument("--save-dir", type=str, default="./save_files/", help="directory in which training state and "
                                                                               "model should be saved")
     parser.add_argument("--save-rate", type=int, default=1000, help="save model once every time this many episodes " \
@@ -45,12 +45,12 @@ def parse_args():
     #Newly added arguments
     parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
     parser.add_argument("--layout", type=str, default="mediumClassic") #decide the layout to train
-    parser.add_argument("--obs_type", type=str, default="full_obs")  # full_obs or partial_obs
+    parser.add_argument("--obs_type", type=str, default="partial_obs")  # full_obs or partial_obs
     parser.add_argument("--partial_obs_range", type=int, default=3)  # 3x3,5x5,7x7 ...
-    parser.add_argument("--shared_obs", type=bool, default= True)  # pacman and ghost same observation?
-    parser.add_argument("--timeStepObs", type=bool, default= True)  # Do we want 2 time step?
-    parser.add_argument("--astarSearch", type=bool, default= True)  # Do we want 2 time step?
-    parser.add_argument("--astarAlpha", type=int, default= 1)  # Do we want 2 time step?
+    parser.add_argument("--shared_obs", action="store_true", default= False)  # pacman and ghost same observation?
+    parser.add_argument("--timeStepObs", action="store_true", default= False)  # Do we want 2 time steps?
+    parser.add_argument("--astarSearch", action="store_true", default= False)  # Do we want negative reward for dist
+    parser.add_argument("--astarAlpha", type=int, default= 1)  # How much do we penalize them
 
     return parser.parse_args()
 
@@ -110,7 +110,7 @@ def train(arglist):
         obs_n = env.reset()  # so that env.observation_space is initialized so trainers can be initialized
         # Create agent trainers
         num_adversaries = arglist.num_adversaries
-        obs_shape_n = [env.observation_space.shape for i in range(env.n)]
+        obs_shape_n = [env.observation_space[i].shape for i in range(env.n)]
         print("env.observation_space.shape", env.observation_space.shape)
         print(obs_shape_n)
         print("num adversaries: ", num_adversaries, ", env.n (num agents): ", env.n)
