@@ -44,8 +44,8 @@ def parse_args():
 
     #Newly added arguments
     parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
-    parser.add_argument("--layout", type=str, default="mediumClassic") #decide the layout to train
-    parser.add_argument("--obs_type", type=str, default="partial_obs")  # full_obs or partial_obs
+    parser.add_argument("--layout", type=str, default="smallClassic") #decide the layout to train
+    parser.add_argument("--obs_type", type=str, default="full_obs")  # full_obs or partial_obs
     parser.add_argument("--partial_obs_range", type=int, default=3)  # 3x3,5x5,7x7 ...
     parser.add_argument("--shared_obs", action="store_true", default= False)  # pacman and ghost same observation?
     parser.add_argument("--timeStepObs", action="store_true", default= False)  # Do we want 2 time steps?
@@ -160,7 +160,6 @@ def train(arglist):
             for i, agent in enumerate(trainers):
                 agent.experience(obs_n[i], action_n[i], rew_n[i], new_obs_n[i], done, terminal)
             obs_n = new_obs_n
-            # print(rew_n)
             for i, rew in enumerate(rew_n):
                 episode_rewards[-1] += rew
                 agent_rewards[i][-1] += rew
@@ -174,8 +173,8 @@ def train(arglist):
 
             # increment global step counter
             train_step += 1
-            if train_step % 1000 == 0:
-                print(train_step)
+            # if train_step % 1000 == 0:
+            #     print(train_step)
             # for benchmarking learned policies
             if arglist.benchmark:
                 for i, info in enumerate(info_n):

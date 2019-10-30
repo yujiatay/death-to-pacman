@@ -54,6 +54,7 @@ class PacmanEnv(gym.Env):
         self.shared_obs = shared_obs
         self.timeStepObs = timeStepObs
         self.astarSearch = astarSearch
+        self.step_diff = None
         self.astarAlpha = astarAlpha
         self.chooseLayout(randomLayout=chosen_layout == "random", chosenLayout=chosen_layout)
         self.n = min(numGhosts + 1, self.layout.getNumGhosts() + 1)  # num of ghosts may be limited by map
@@ -200,9 +201,13 @@ class PacmanEnv(gym.Env):
 
         if self.astarSearch:
             steps_to_pacman = self.call_search(self.game.state.data.agentStates, self.game.state)
-            #  print(1, steps_to_pacman)
-            for i, steps in enumerate(steps_to_pacman):
-                reward_n[i + 1] -= self.astarAlpha * steps
+            if self.step_diff == None:
+                self.step_diff = steps_to_pacman
+            else:
+                for i, steps in enumerate(steps_to_pacman):
+                    print(steps - self.step_diff[i])
+                    reward_n[i+1] -= steps - self.step_diff[i]
+                self.step_diff = steps_to_pacman
 
         for i in agent_illegal:
             reward_n[i] -= 10
@@ -283,6 +288,11 @@ class PacmanEnv(gym.Env):
             one_hot_vel.extend(one_hot)
         one_hot_vel = np.array(one_hot_vel)
 
+        if self.astarSearch:
+            steps_to_pacman = self.call_search(self.game.state.data.agentStates, self.game.state)
+            #  print(1, steps_to_pacman)
+
+
 
 
         # if agent_index == 0: print(other_vel)
@@ -309,6 +319,7 @@ class PacmanEnv(gym.Env):
                                       one_hot_vel, capsule_loc,
                                       food_loc, wall_loc,
                                       scared_array))
+                if self.astarSearch: tmp = np.concatenate((tmp,steps_to_pacman))
                 if self.prev_obs[agent_index] == []:
                     self.prev_obs[agent_index] = np.zeros(len(tmp))
 
@@ -322,6 +333,7 @@ class PacmanEnv(gym.Env):
                     tmp = np.concatenate((all_agent_grid,one_hot_vel,
                                           capsule_loc, food_loc,
                                           wall_loc, scared_array))
+                    if self.astarSearch: tmp = np.concatenate((tmp, steps_to_pacman))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
                     if self.timeStepObs:
@@ -332,6 +344,7 @@ class PacmanEnv(gym.Env):
                 else:
                     tmp = np.concatenate((all_agent_grid,one_hot_vel,
                                           wall_loc, scared_array))
+                    if self.astarSearch: tmp = np.concatenate((tmp, steps_to_pacman))
                     if self.prev_obs[agent_index] == []:
                         self.prev_obs[agent_index] = np.zeros(len(tmp))
                     if self.timeStepObs:
@@ -384,12 +397,15 @@ class PacmanEnv(gym.Env):
             if self.shared_obs:
                 obs = np.concatenate((partial_all_agent, one_hot_vel, part_capsule,
                                       part_food, part_wall, scared_array))
+                if self.astarSearch: obs = np.concatenate((obs, steps_to_pacman))
             else:
                 if agent_index == 0:
                     obs = np.concatenate((partial_all_agent, one_hot_vel,
                                           part_capsule, part_food, part_wall, scared_array))
+                    if self.astarSearch: obs = np.concatenate((obs, steps_to_pacman))
                 else:
                     obs = np.concatenate((partial_all_agent, one_hot_vel, part_wall, scared_array))
+                    if self.astarSearch: obs = np.concatenate((obs, steps_to_pacman))
             return obs
 
     # def get_action_meanings(self):
