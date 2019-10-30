@@ -205,7 +205,7 @@ class PacmanEnv(gym.Env):
                 self.step_diff = steps_to_pacman
             else:
                 for i, steps in enumerate(steps_to_pacman):
-                    print(steps - self.step_diff[i])
+                    #print(steps - self.step_diff[i])
                     reward_n[i+1] -= steps - self.step_diff[i]
                 self.step_diff = steps_to_pacman
 
