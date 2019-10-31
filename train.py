@@ -147,6 +147,9 @@ def train(arglist):
         total_lose = [0]
         final_lose = []
         t_start = time.time()
+        loss_list ={}
+        for i in range(env.n):
+            loss_list[i] = [[] for i in range(6)]
 
 
         print('Starting iterations...')
@@ -210,10 +213,17 @@ def train(arglist):
 
             # update all trainers, if not in display or benchmark mode
             loss = None
+
             for agent in trainers:
                 agent.preupdate()
-            for agent in trainers:
+            for ind, agent in enumerate(trainers):
                 loss = agent.update(trainers, train_step)
+                if train_step%10000 == 0 and loss != None:
+                    for i in range(len(loss)):
+                        loss_list[ind][i].append(loss[i])
+
+
+
             # save model, display training output
             if (terminal or done) and (len(episode_rewards) % arglist.save_rate == 0):
                 saving = arglist.save_dir + ("{}".format(0 + len(episode_rewards))) #TODO why append this
@@ -223,9 +233,10 @@ def train(arglist):
                     print("steps: {}, episodes: {}, mean episode reward: {}, time: {}".format(
                         train_step, len(episode_rewards), np.mean(episode_rewards[-arglist.save_rate:]), round(time.time()-t_start, 3)))
                 else:
-                    print("steps: {}, episodes: {}, mean episode reward: {}, agent episode reward: {}, time: {}".format(
+                    print("steps: {}, episodes: {}, mean episode reward: {}, agent episode reward: {}, number of wins {}, number of lose {}, "
+                          "time: {}".format(
                         train_step, len(episode_rewards), np.mean(episode_rewards[-arglist.save_rate:]),
-                        [np.mean(rew[-arglist.save_rate:]) for rew in agent_rewards], round(time.time()-t_start, 3)))
+                        [np.mean(rew[-arglist.save_rate:]) for rew in agent_rewards],np.sum(total_win[-arglist.save_rate:]),np.sum(total_lose[-arglist.save_rate:]), round(time.time()-t_start, 3)))
                 t_start = time.time()
                 # Keep track of final episode reward
                 final_ep_rewards.append(np.mean(episode_rewards[-arglist.save_rate:]))
@@ -236,11 +247,15 @@ def train(arglist):
                 ep_ag_reward_df = pd.DataFrame(final_ep_ag_rewards)
                 win_df = pd.DataFrame(final_win)
                 lose_df = pd.DataFrame(final_lose)
+                for i in range(env.n):
+                    trainer_loss_df = pd.DataFrame(loss_list[i]).transpose()
+                    trainer_loss_df.to_csv(arglist.plots_dir + arglist.exp_name + '_trainer_loss_df_{}.csv'.format(i))
 
                 ep_reward_df.to_csv(arglist.plots_dir + arglist.exp_name + '_rewards.csv')
                 ep_ag_reward_df.to_csv(arglist.plots_dir + arglist.exp_name + '_agrewards.csv')
                 win_df.to_csv(arglist.plots_dir + arglist.exp_name + '_win_df.csv')
                 lose_df.to_csv(arglist.plots_dir + arglist.exp_name + '_lose_df.csv')
+
 
 
                 for i,rew in enumerate(agent_rewards):
