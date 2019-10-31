@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 import time
 import pickle
+import pandas as pd
 import os
 import math
 
@@ -40,10 +41,11 @@ def parse_args():
     parser.add_argument("--benchmark-iters", type=int, default=100000, help="number of iterations run for benchmarking")
     parser.add_argument("--benchmark-dir", type=str, default="./benchmark_files/", help="directory where benchmark data"
                                                                                         " is saved")
-    parser.add_argument("--plots-dir", type=str, default="./learning_curves/", help="directory where plot data is saved")
+    parser.add_argument("--plots-dir", type=str, default="./save_files/", help="directory where plot data is saved")
 
     #Newly added arguments
     parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
+    parser.add_argument("--load_episode",type = int, default=0)
     parser.add_argument("--layout", type=str, default="smallClassic") #decide the layout to train
     parser.add_argument("--obs_type", type=str, default="full_obs")  # full_obs or partial_obs
     parser.add_argument("--partial_obs_range", type=int, default=3)  # 3x3,5x5,7x7 ...
@@ -124,7 +126,7 @@ def train(arglist):
 
         # Load previous results, if necessary
         if arglist.load_dir == "":
-            arglist.load_dir = arglist.save_dir + ("{}".format(15000))
+            arglist.load_dir = arglist.save_dir + ("{}".format(arglist.load_episode))
         if arglist.restore or arglist.benchmark:
             print('Loading previous state...')
             U.load_state(arglist.load_dir)
@@ -140,14 +142,19 @@ def train(arglist):
         saver = tf.train.Saver(max_to_keep=None)
         episode_step = 0
         train_step = 0
+        total_win =[0]
+        final_win = []
+        total_lose = [0]
+        final_lose = []
         t_start = time.time()
+
 
         print('Starting iterations...')
         while True:
             # get action
             action_n = [agent.action(obs) for agent, obs in zip(trainers,obs_n)]
             # environment step
-            new_obs_n, rew_n, done, info_n = env.step(action_n)
+            new_obs_n, rew_n, done, info_n ,win , lose = env.step(action_n)
             episode_step += 1
             terminal = (episode_step >= arglist.max_episode_len)
             # print("obs_n", obs_n)
@@ -168,6 +175,12 @@ def train(arglist):
                     env.render()
                 obs_n = env.reset()
                 episode_step = 0
+                if win:
+                    total_win[-1] += 1
+                if lose:
+                    total_lose[-1] += 1
+                total_win.append(0)
+                total_lose.append(0)
                 episode_rewards.append(0)
                 for a in agent_rewards:
                     a.append(0)
@@ -216,11 +229,27 @@ def train(arglist):
                 t_start = time.time()
                 # Keep track of final episode reward
                 final_ep_rewards.append(np.mean(episode_rewards[-arglist.save_rate:]))
+                final_win.append(np.sum(total_win[-arglist.save_rate:]))
+                final_lose.append(np.sum(total_lose[-arglist.save_rate:]))
+
+                ep_reward_df = pd.DataFrame(final_ep_rewards)
+                ep_ag_reward_df = pd.DataFrame(final_ep_ag_rewards)
+                win_df = pd.DataFrame(final_win)
+                lose_df = pd.DataFrame(final_lose)
+
+                ep_reward_df.to_csv(arglist.plots_dir + arglist.exp_name + '_rewards.csv')
+                ep_ag_reward_df.to_csv(arglist.plots_dir + arglist.exp_name + '_agrewards.csv')
+                win_df.to_csv(arglist.plots_dir + arglist.exp_name + '_win_df.csv')
+                lose_df.to_csv(arglist.plots_dir + arglist.exp_name + '_lose_df.csv')
+
                 for rew in agent_rewards:
                     final_ep_ag_rewards.append(np.mean(rew[-arglist.save_rate:]))
 
             # saves final episode reward for plotting training curve later
+
             if len(episode_rewards) > arglist.num_episodes:
+
+
                 rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
                 with open(rew_file_name, 'wb') as fp:
                     pickle.dump(final_ep_rewards, fp)

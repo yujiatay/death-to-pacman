@@ -255,7 +255,7 @@ class PacmanEnv(gym.Env):
                 'r': self.cum_reward,
                 'l': self.step_counter
             }]
-        return obs_n, reward_n, done, info
+        return obs_n, reward_n, done, info, self.game.state.isWin() ,self.game.state.isLose()
 
     def observation(self, agent_index, agent_states, game_states):
         comm = []
