@@ -137,7 +137,7 @@ def train(arglist):
         episode_rewards = [0.0]  # sum of rewards for all agents
         agent_rewards = [[0.0] for _ in range(env.n)]  # individual agent reward
         final_ep_rewards = []  # sum of rewards for training curve
-        final_ep_ag_rewards = []  # agent rewards for training curve
+        final_ep_ag_rewards = [[] for i in range(env.n)]  # agent rewards for training curve
         agent_info = [[[]]]  # placeholder for benchmarking info
         saver = tf.train.Saver(max_to_keep=None)
         episode_step = 0
@@ -242,20 +242,18 @@ def train(arglist):
                 win_df.to_csv(arglist.plots_dir + arglist.exp_name + '_win_df.csv')
                 lose_df.to_csv(arglist.plots_dir + arglist.exp_name + '_lose_df.csv')
 
-                for rew in agent_rewards:
-                    final_ep_ag_rewards.append(np.mean(rew[-arglist.save_rate:]))
 
+                for i,rew in enumerate(agent_rewards):
+                    final_ep_ag_rewards[i].append(np.mean(rew[-arglist.save_rate:]))
             # saves final episode reward for plotting training curve later
 
             if len(episode_rewards) > arglist.num_episodes:
-
-
-                rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
-                with open(rew_file_name, 'wb') as fp:
-                    pickle.dump(final_ep_rewards, fp)
-                agrew_file_name = arglist.plots_dir + arglist.exp_name + '_agrewards.pkl'
-                with open(agrew_file_name, 'wb') as fp:
-                    pickle.dump(final_ep_ag_rewards, fp)
+                # rew_file_name = arglist.plots_dir + arglist.exp_name + '_rewards.pkl'
+                # with open(rew_file_name, 'wb') as fp:
+                #     pickle.dump(final_ep_rewards, fp)
+                # agrew_file_name = arglist.plots_dir + arglist.exp_name + '_agrewards.pkl'
+                # with open(agrew_file_name, 'wb') as fp:
+                #     pickle.dump(final_ep_ag_rewards, fp)
                 print('...Finished total of {} episodes.'.format(len(episode_rewards)))
                 break
 
