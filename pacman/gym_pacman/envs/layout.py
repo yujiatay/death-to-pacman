@@ -137,7 +137,7 @@ def getLayout(name, back = 0):
     if name.endswith('.lay'):
         layout = tryToLoad(path + '/layouts/' + name)
         if layout == None: layout = tryToLoad(name)
-    elif name in ['randomSmallClassic']:
+    elif name in ['randomSmallClassic', 'randomOpenSmallClassic']:
         layout = tryToLoad(path + '/layouts/' + name + '.lay', randomPacmanPos=True)
         if layout == None: layout = tryToLoad(name + '.lay', randomPacmanPos=True)
     else:
@@ -289,7 +289,7 @@ def tryToLoad(fullname, randomPacmanPos=False):
             while not found:
                 row = random.randint(1, height - 2)  # ignore border walls
                 col = random.randint(1, width - 2)
-                if l[row][col] == 'G' or l[row][col] == '%':
+                if l[row][col] == 'G' or l[row][col] == '%' or l[row][col] == 'o':
                     continue
                 else:
                     l[row] = l[row][:col] + 'P' + l[row][col+1:]
