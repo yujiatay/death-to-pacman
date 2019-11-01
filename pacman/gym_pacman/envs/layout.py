@@ -137,6 +137,9 @@ def getLayout(name, back = 0):
     if name.endswith('.lay'):
         layout = tryToLoad(path + '/layouts/' + name)
         if layout == None: layout = tryToLoad(name)
+    elif name in ['randomSmallClassic']:
+        layout = tryToLoad(path + '/layouts/' + name + '.lay', randomPacmanPos=True)
+        if layout == None: layout = tryToLoad(name + '.lay', randomPacmanPos=True)
     else:
         layout = tryToLoad(path + '/layouts/' + name + '.lay')
         if layout == None: layout = tryToLoad(name + '.lay')
@@ -274,8 +277,24 @@ def dfsReachabilityCheck(maze, start_x, start_y, food_positions):
     return food_reachable
 
 
-def tryToLoad(fullname):
+def tryToLoad(fullname, randomPacmanPos=False):
     if(not os.path.exists(fullname)): return None
     f = open(fullname)
-    try: return Layout([line.strip() for line in f])
+    try:
+        if randomPacmanPos:
+            l = [line.strip() for line in f]
+            height = len(l)
+            width = len(l[0])
+            found = False
+            while not found:
+                row = random.randint(1, height - 2)  # ignore border walls
+                col = random.randint(1, width - 2)
+                if l[row][col] == 'G' or l[row][col] == '%':
+                    continue
+                else:
+                    l[row] = l[row][:col] + 'P' + l[row][col+1:]
+                    found = True
+            return Layout(l)
+        else:
+            return Layout([line.strip() for line in f])
     finally: f.close()

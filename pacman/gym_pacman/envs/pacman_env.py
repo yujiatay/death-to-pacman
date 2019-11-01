@@ -87,7 +87,6 @@ class PacmanEnv(gym.Env):
                 else:
                     chosenLayout = self.np_random.choice(self.noGhost_layouts)
             self.chosen_layout = chosenLayout
-            # print("Chose layout", chosenLayout)
             self.layout = getLayout(chosenLayout)
         self.maze_size = (self.layout.width, self.layout.height)
 
@@ -111,7 +110,7 @@ class PacmanEnv(gym.Env):
 
         self.rules = ClassicGameRules(300)
         self.rules.quiet = True
-
+        self.chooseLayout(randomLayout=False, chosenLayout=self.chosen_layout)
         # note that num of ghosts can be trimmed inside here based on the layout
         self.game = self.rules.newGame(self.layout, self.pacman, self.ghosts,
                                        self.display, quiet=True, catchExceptions=False)
