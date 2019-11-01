@@ -67,7 +67,7 @@ class PacmanEnv(gym.Env):
         #     reward_n = [reward] * self.n
 
         self.want_display = want_display
-        self.action_space = [spaces.Discrete(5) for i in range(self.n)]
+        self.action_space = [spaces.Discrete(4) for i in range(self.n)]
         self.display = PacmanGraphics(1.0) if self.want_display else None
         # self._action_set = range(len(PACMAN_ACTIONS))
         self.location = None

@@ -358,7 +358,10 @@ class PacmanRules:
         """
         Returns a list of possible actions.
         """
-        return Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
+        possibleActions = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
+        if Directions.STOP in possibleActions:
+            possibleActions.remove(Directions.STOP)
+        return possibleActions
     getLegalActions = staticmethod( getLegalActions )
 
     def applyAction( state, action ):
