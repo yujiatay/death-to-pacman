@@ -44,7 +44,7 @@ def parse_args():
     parser.add_argument("--plots-dir", type=str, default="./save_files/", help="directory where plot data is saved")
 
     #Newly added arguments
-    parser.add_argument("--load", default=False) #only load if this is true. So we can display without loading
+    parser.add_argument("--load", action="store_true", default=False) #only load if this is true. So we can display without loading
     parser.add_argument("--load_episode",type = int, default=0)
     parser.add_argument("--layout", type=str, default="smallClassic") #decide the layout to train
     parser.add_argument("--obs_type", type=str, default="full_obs")  # full_obs or partial_obs
@@ -274,4 +274,5 @@ def train(arglist):
 
 if __name__ == '__main__':
     arglist = parse_args()
+    print(arglist)
     train(arglist)
