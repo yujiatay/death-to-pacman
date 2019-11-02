@@ -45,11 +45,12 @@ class PacmanEnv(gym.Env):
     MAX_MAZE_SIZE = (7, 7)
     num_envs = 1
 
-    def __init__(self, want_display, numGhosts, MAX_EP_LENGTH, chosen_layout, obs_type, partial_obs_range, shared_obs,
-                 timeStepObs, astarSearch, astarAlpha):
+    def __init__(self, want_display, numGhosts, MAX_EP_LENGTH, chosen_layout, pacman_obs_type, ghost_obs_type,
+                 partial_obs_range, shared_obs, timeStepObs, astarSearch, astarAlpha):
         # Newly added
         self.MAX_EP_LENGTH = MAX_EP_LENGTH
-        self.obs_type = obs_type
+        self.pacman_obs_type = pacman_obs_type
+        self.ghost_obs_type = ghost_obs_type
         self.partial_obs_range = partial_obs_range
         self.shared_obs = shared_obs
         self.timeStepObs = timeStepObs
@@ -257,31 +258,24 @@ class PacmanEnv(gym.Env):
         return obs_n, reward_n, done, info, self.game.state.isWin() ,self.game.state.isLose()
 
     def observation(self, agent_index, agent_states, game_states):
-        comm = []
-        other_pos = []
-        other_vel = []
+        debug = False
+        if debug: print("Agent", agent_index, ": ", end = '')
+        # =================== initialize the possible observation features ===================
+        velocities = []
+        one_hot_vel = []
         scared_array = []
-        agent = agent_states[agent_index]
+        thisAgent = agent_states[agent_index]
+        steps_to_pacman = None
 
-        for i, other in enumerate(agent_states):
-            if i == agent_index:
-                other_vel.append(other.getDirection())
-                continue
-            other_pos.append(np.array(other.getPosition()))
-            other_vel.append(other.getDirection())
+        for i,  agent in enumerate(agent_states):
+            velocity_index = PACMAN_ACTIONS.index(agent.getDirection())
+            velocities.append(velocity_index)
+            if i != 0:
+                scared_array.append(int(agent.scaredTimer > 0))
 
-        for i, other in enumerate(agent_states):
-            if i == 0:
-                continue
-            else:
-                scared_array.append(int(other.scaredTimer > 0))
         # print(scared_array)
 
-        for i in range(len(other_vel)):
-            other_vel[i] = PACMAN_ACTIONS.index(other_vel[i])
-
-        one_hot_vel = []
-        for i in other_vel:
+        for i in velocities:
             one_hot = [0]*(5)
             one_hot[i] = 1
             one_hot_vel.extend(one_hot)
@@ -291,121 +285,102 @@ class PacmanEnv(gym.Env):
             steps_to_pacman = self.call_search(self.game.state.data.agentStates, self.game.state)
             #  print(1, steps_to_pacman)
 
-
-
-
-        # if agent_index == 0: print(other_vel)
-        # print(PACMAN_ACTIONS.index(other_vel[0]))
-
-        if self.obs_type == 'full_obs':
-            capsule_loc = np.asarray(
-                list(map(int, str(game_states.getCapsules_TF()).replace("T", "1").replace("F", "0").replace("\n", ""))))
-            food_loc = np.asarray(
-                list(map(int, str(game_states.getFood()).replace("T", "1").replace("F", "0").replace("\n", ""))))
-            wall_loc = np.asarray(
-                list(map(int, str(game_states.getWalls()).replace("T", "1").replace("F", "0").replace("\n", ""))))
-            # return np.concatenate([agent.getDirection()] + [agent.getPosition()] + other_pos + other_vel)
-
-            all_agent_grid = []
+        if self.pacman_obs_type == 'full_obs' or self.ghost_obs_type == 'full_obs': # at least one full - get common features
+            all_agent_grid_full = []
             for i in range(len(agent_states)):
-                agent_grid = list(map(int,str(game_states.getAgent_grid(i)).replace("T", "1").replace("F","0").replace("\n", "")))
-                all_agent_grid.extend(agent_grid)
-            all_agent_grid = np.array(all_agent_grid)
+                agent_grid = list(map(int,str(game_states.getAgent_grid(i)).replace("T", "1").replace("F", "0").replace("\n", "")))
+                all_agent_grid_full.extend(agent_grid)
+            all_agent_grid_full = np.array(all_agent_grid_full)
+            wall_full = np.asarray(
+                list(map(int, str(game_states.getWalls()).replace("T", "1").replace("F", "0").replace("\n", ""))))
 
+        if self.pacman_obs_type == 'full_obs' or self.shared_obs:  # get pacman specific features as well
+            capsule_full = np.asarray(
+                list(map(int, str(game_states.getCapsules_TF()).replace("T", "1").replace("F", "0").replace("\n", ""))))
+            food_full = np.asarray(
+                list(map(int, str(game_states.getFood()).replace("T", "1").replace("F", "0").replace("\n", ""))))
 
-            if self.shared_obs:
-                tmp = np.concatenate((all_agent_grid,
-                                      one_hot_vel, capsule_loc,
-                                      food_loc, wall_loc,
-                                      scared_array))
-                if self.astarSearch: tmp = np.concatenate((tmp,steps_to_pacman))
-                if self.prev_obs[agent_index] == []:
-                    self.prev_obs[agent_index] = np.zeros(len(tmp))
+        # =================== create the observation based on params ===================
+        if self.shared_obs:
+            if debug: print("Shared observation - forcing full observation")
+            # all agents have same obs so MUST be full - ignore pacman_obs_type and ghost_obs_type
+            obs = np.concatenate((all_agent_grid_full,
+                                  one_hot_vel, capsule_full,
+                                  food_full, wall_full,
+                                  scared_array))
+            if self.astarSearch:
+                obs = np.concatenate((obs, steps_to_pacman))
 
-                if self.timeStepObs:
-                    obs = np.concatenate((self.prev_obs[agent_index], tmp))
-                    self.prev_obs[agent_index] = tmp
-                else:
-                    obs = tmp
-            else:
+        else:  # agents have different obs
+
+            # does this agent have partial obs?
+            if (agent_index == 0 and self.pacman_obs_type == 'partial_obs') \
+                    or (agent_index != 0 and self.ghost_obs_type == 'partial_obs'):
+
+                wall_part = []
+                food_part = []
+                capsule_part = []
+                numAgent = len(agent_states)
+                width, height = game_states.getWidth(), game_states.getHeight()
+
+                wall = game_states.getWalls()
+                food = game_states.getFood()
+                capsule = game_states.getCapsules_TF()
+
+                all_agent_grid = []
+                for i in range(numAgent):
+                    agent_grid = game_states.getAgent_grid(i)
+                    all_agent_grid.append(agent_grid)
+
+                x, y = thisAgent.getPosition()[0], thisAgent.getPosition()[1]
+                diff = (self.partial_obs_range - 3) // 2
+
+                all_agent_grid_part = [[]for i in range(numAgent)]
+
+                for i in range(1 + diff, -2 - diff, -1):
+                    for j in range(-1 - diff, 2 + diff):
+                        if y + i <= 0 or y + i >= height or x + j <= 0 or x + j >= width:
+                            wall_part.append(1)
+                            food_part.append(0)
+                            capsule_part.append(0)
+                            for k in range(numAgent):
+                                all_agent_grid_part[k].append(0)
+                        else:
+                            wall_part.append(int(wall[int(x + j)][int(y + i)]))
+                            food_part.append(int(food[int(x + j)][int(y + i)]))
+                            capsule_part.append(int(capsule[int(x + j)][int(y + i)]))
+                            for k in range(numAgent):
+                                tmp = all_agent_grid[k]
+                                all_agent_grid_part[k].append(int(tmp[int(x + j)][int(y + i)]))
+
+                all_agent_grid_part = np.concatenate(all_agent_grid_part)
+
                 if agent_index == 0:
-                    tmp = np.concatenate((all_agent_grid,one_hot_vel,
-                                          capsule_loc, food_loc,
-                                          wall_loc, scared_array))
-                    if self.astarSearch: tmp = np.concatenate((tmp, steps_to_pacman))
-                    if self.prev_obs[agent_index] == []:
-                        self.prev_obs[agent_index] = np.zeros(len(tmp))
-                    if self.timeStepObs:
-                        obs = np.concatenate((self.prev_obs[agent_index], tmp))
-                        self.prev_obs[agent_index] = tmp
-                    else:
-                        obs = tmp
+                    if debug: print("Non shared observation, full, pacman")
+                    obs = np.concatenate((all_agent_grid_part, one_hot_vel,
+                                          capsule_part, food_part,
+                                          wall_part, scared_array))
                 else:
-                    tmp = np.concatenate((all_agent_grid,one_hot_vel,
-                                          wall_loc, scared_array))
-                    if self.astarSearch: tmp = np.concatenate((tmp, steps_to_pacman))
-                    if self.prev_obs[agent_index] == []:
-                        self.prev_obs[agent_index] = np.zeros(len(tmp))
-                    if self.timeStepObs:
-                        obs = np.concatenate((self.prev_obs[agent_index], tmp))
-                        self.prev_obs[agent_index] = tmp
-                    else:
-                        obs = tmp
-            return obs
+                    if debug: print("Non shared observation, full, ghost")
+                    obs = np.concatenate((all_agent_grid_part, one_hot_vel,
+                                          wall_part, scared_array))
 
-        elif self.obs_type == 'partial_obs':
-            partial_size = self.partial_obs_range
-            part_wall = []
-            part_food = []
-            part_capsule = []
-            numAgent = len(agent_states)
-            width, height = game_states.getWidth(), game_states.getHeight()
+            else:  # this agent has full obs
+                if agent_index == 0:  # pacman
+                    if debug: ("Non shared observation, partial, pacman")
+                    obs = np.concatenate((all_agent_grid_full, one_hot_vel,
+                                          capsule_full, food_full,
+                                          wall_full, scared_array))
+                else:  # ghosts
+                    if debug: print("Non shared observation, partial, ghost")
+                    obs = np.concatenate((all_agent_grid_full, one_hot_vel,
+                                          wall_full, scared_array))
 
-            wall = game_states.getWalls()
-            food = game_states.getFood()
-            capsule = game_states.getCapsules_TF()
+            if self.astarSearch:
+                if debug: print(" - with astar")
+                obs = np.concatenate((obs, steps_to_pacman))
 
-            all_agent_grid = []
-            for i in range(numAgent):
-                agent_grid = game_states.getAgent_grid(i)
-                all_agent_grid.append(agent_grid)
-
-            x, y = agent.getPosition()[0], agent.getPosition()[1]
-            diff = (partial_size - 3) // 2
-
-            partial_all_agent=[[]for i in range(numAgent)]
-
-            for i in range(1 + diff, -2 - diff, -1):
-                for j in range(-1 - diff, 2 + diff):
-                    if y + i <= 0 or y + i >= height or x + j <= 0 or x + j >= width:
-                        part_wall.append(1)
-                        part_food.append(0)
-                        part_capsule.append(0)
-                        for k in range(numAgent):
-                            partial_all_agent[k].append(0)
-                    else:
-                        part_wall.append(int(wall[int(x + j)][int(y + i)]))
-                        part_food.append(int(food[int(x + j)][int(y + i)]))
-                        part_capsule.append(int(capsule[int(x + j)][int(y + i)]))
-                        for k in range(numAgent):
-                            tmp = all_agent_grid[k]
-                            partial_all_agent[k].append(int(tmp[int(x + j)][int(y + i)]))
-
-            partial_all_agent =np.concatenate(partial_all_agent)
-
-            if self.shared_obs:
-                obs = np.concatenate((partial_all_agent, one_hot_vel, part_capsule,
-                                      part_food, part_wall, scared_array))
-                if self.astarSearch: obs = np.concatenate((obs, steps_to_pacman))
-            else:
-                if agent_index == 0:
-                    obs = np.concatenate((partial_all_agent, one_hot_vel,
-                                          part_capsule, part_food, part_wall, scared_array))
-                    if self.astarSearch: obs = np.concatenate((obs, steps_to_pacman))
-                else:
-                    obs = np.concatenate((partial_all_agent, one_hot_vel, part_wall, scared_array))
-                    if self.astarSearch: obs = np.concatenate((obs, steps_to_pacman))
-            return obs
+        return obs
 
     # def get_action_meanings(self):
     #     return [PACMAN_ACTIONS[i] for i in self._action_set]

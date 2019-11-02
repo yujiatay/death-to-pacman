@@ -47,10 +47,11 @@ def parse_args():
     parser.add_argument("--load", action="store_true", default=False) #only load if this is true. So we can display without loading
     parser.add_argument("--load_episode",type = int, default=0)
     parser.add_argument("--layout", type=str, default="smallClassic") #decide the layout to train
-    parser.add_argument("--obs_type", type=str, default="full_obs")  # full_obs or partial_obs
+    parser.add_argument("--pacman_obs_type", type=str, default="partial_obs")  # pacman: full_obs or partial_obs
+    parser.add_argument("--ghost_obs_type", type=str, default="full_obs")  # ghost: full_obs or partial_obs
     parser.add_argument("--partial_obs_range", type=int, default=3)  # 3x3,5x5,7x7 ...
     parser.add_argument("--shared_obs", action="store_true", default= False)  # pacman and ghost same observation?
-    parser.add_argument("--timeStepObs", action="store_true", default= False)  # Do we want 2 time steps?
+    parser.add_argument("--timeStepObs", action="store_true", default= False)  # DEPRECATED
     parser.add_argument("--astarSearch", action="store_true", default= False)  # Do we want negative reward for dist
     parser.add_argument("--astarAlpha", type=int, default= 1)  # How much do we penalize them
 
@@ -78,7 +79,8 @@ def make_env(scenario_name, arglist, benchmark=False):
                     arglist.num_adversaries,
                     arglist.max_episode_len,
                     arglist.layout,  # for random, put string "random"
-                    arglist.obs_type,
+                    arglist.pacman_obs_type,
+                    arglist.ghost_obs_type,
                     arglist.partial_obs_range,
                     arglist.shared_obs,
                     arglist.timeStepObs,
@@ -113,8 +115,7 @@ def train(arglist):
         # Create agent trainers
         num_adversaries = arglist.num_adversaries
         obs_shape_n = [env.observation_space[i].shape for i in range(env.n)]
-        print("env.observation_space.shape", env.observation_space.shape)
-        print(obs_shape_n)
+        print("env.observation_space:", env.observation_space)
         print("num adversaries: ", num_adversaries, ", env.n (num agents): ", env.n)
 
         #need to ensure that the trainer is in correct order. pacman in front
