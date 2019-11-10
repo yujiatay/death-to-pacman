@@ -787,92 +787,21 @@ class Game:
             action 
         """
 
-        old_reward = self.state.getScore()
+        old_score = self.state.getScore()
 
         reward_n = [0] * len(self.agents)
         # Fetch the next agent
+        sc = None
         for agentIndex in range(len(self.agents)):
             if not self.gameOver:
                 action = action_n[agentIndex]
-                # move_time = 0
-                # skip_action = False
-                # # Generate an observation of the state
-                # if agentIndex == 0: # pacman
-                #     action = pacman_action # action already specified, go directly to execute
-                # else: # for ghosts, follow Berkeley AI code
-                #     if 'observationFunction' in dir( agent ):
-                #         self.mute(agentIndex)
-                #         if self.catchExceptions:
-                #             try:
-                #                 timed_func = TimeoutFunction(agent.observationFunction, int(self.rules.getMoveTimeout(agentIndex)))
-                #                 try:
-                #                     start_time = time.time()
-                #                     observation = timed_func(self.state.deepCopy())
-                #                 except TimeoutFunctionException:
-                #                     skip_action = True
-                #                 move_time += time.time() - start_time
-                #                 self.unmute()
-                #             except Exception as data:
-                #                 self._agentCrash(agentIndex, quiet=False)
-                #                 self.unmute()
-                #                 return
-                #         else:
-                #             observation = agent.observationFunction(self.state.deepCopy())
-                #         self.unmute()
-                #     else:
-                #         observation = self.state.deepCopy()
-                #
-                #     # Solicit an action
-                #     self.mute(agentIndex)
-                #     if self.catchExceptions:
-                #         try:
-                #             timed_func = TimeoutFunction(agent.getAction, int(self.rules.getMoveTimeout(agentIndex)) - int(move_time))
-                #             try:
-                #                 start_time = time.time()
-                #                 if skip_action:
-                #                     raise TimeoutFunctionException()
-                #                 action = timed_func( observation )
-                #             except TimeoutFunctionException:
-                #                 print("Agent %d timed out on a single move!" % agentIndex, file=sys.stderr)
-                #                 self.agentTimeout = True
-                #                 self._agentCrash(agentIndex, quiet=True)
-                #                 self.unmute()
-                #                 return
-                #
-                #             move_time += time.time() - start_time
-                #
-                #             if move_time > self.rules.getMoveWarningTime(agentIndex):
-                #                 self.totalAgentTimeWarnings[agentIndex] += 1
-                #                 print("Agent %d took too long to make a move! This is warning %d" % (agentIndex, self.totalAgentTimeWarnings[agentIndex]), file=sys.stderr)
-                #                 if self.totalAgentTimeWarnings[agentIndex] > self.rules.getMaxTimeWarnings(agentIndex):
-                #                     print("Agent %d exceeded the maximum number of warnings: %d" % (agentIndex, self.totalAgentTimeWarnings[agentIndex]), file=sys.stderr)
-                #                     self.agentTimeout = True
-                #                     self._agentCrash(agentIndex, quiet=True)
-                #                     self.unmute()
-                #                     return
-                #
-                #             self.totalAgentTimes[agentIndex] += move_time
-                #             #print("Agent: %d, time: %f, total: %f" % (agentIndex, move_time, self.totalAgentTimes[agentIndex]))
-                #             if self.totalAgentTimes[agentIndex] > self.rules.getMaxTotalTime(agentIndex):
-                #                 print("Agent %d ran out of time! (time: %1.2f, file=sys.stderr)" % (agentIndex, self.totalAgentTimes[agentIndex]))
-                #                 self.agentTimeout = True
-                #                 self._agentCrash(agentIndex, quiet=True)
-                #                 self.unmute()
-                #                 return
-                #             self.unmute()
-                #         except Exception as data:
-                #             self._agentCrash(agentIndex)
-                #             self.unmute()
-                #             return
-                #     else:
-                #         action = agent.getAction(observation)
-                #     self.unmute()
 
                 # Execute the action
                 self.moveHistory.append((agentIndex, action))
                 if self.catchExceptions:
                     try:
-                        self.state, rew = self.state.generateSuccessor(agentIndex, action)
+                        sc = None
+                        self.state, rew ,sc = self.state.generateSuccessor(agentIndex, action,None)
                     except Exception as data:
                         self.mute(agentIndex)
                         self._agentCrash(agentIndex)
@@ -881,7 +810,8 @@ class Game:
                 else:
                     # TODO: This generateSuccessor alr calculates total reward after each move.
                     # TODO: should return reward then calculate outside... i think
-                    self.state, rew = self.state.generateSuccessor(agentIndex, action)
+
+                    self.state, rew, sc = self.state.generateSuccessor(agentIndex, action, sc)
 
                 # Allow for game specific conditions (winning, losing, etc.)
                 self.rules.process(self.state, self)
@@ -897,11 +827,11 @@ class Game:
 
         if self.state.isLose():
             reward_n[0] -= 500
-            for i in range(1, 5):
+            for i in range(1, len(action_n)):
                 if reward_n[i] > 0:
-                    reward_n[i] = 200
+                    reward_n[i] = 500
                 else:
-                    reward_n[i] = 100
+                    reward_n[i] = 500
 
         if self.gameOver:
             # inform a learning agent of the game result

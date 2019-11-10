@@ -87,7 +87,7 @@ class GameState:
         else:
             return GhostRules.getLegalActions( self, agentIndex )
 
-    def generateSuccessor( self, agentIndex, action):
+    def generateSuccessor( self, agentIndex, action,sc):
         """
         Returns the successor state after the specified agent takes the action.
         """
@@ -95,6 +95,7 @@ class GameState:
         if self.isWin() or self.isLose(): raise Exception('Can\'t generate a successor of a terminal state.')
 
         # Copy current state
+
         state = GameState(self)
         reward = 0
         # Let agent's logic deal with its action's effects on the board
@@ -117,7 +118,7 @@ class GameState:
         if agentIndex == 0:
             rew = state.data.scoreChange
         else:
-            rew = -state.data.scoreChange
+            rew = -sc
             rew -= 2*TIME_PENALTY
 
         # Book keeping
@@ -125,8 +126,10 @@ class GameState:
         state.data.score += state.data.scoreChange
         GameState.explored.add(self)
         GameState.explored.add(state)
-        return state, rew
-
+        if agentIndex == 0:
+            return state, rew, state.data.scoreChange
+        else:
+            return state, rew, sc
     def getLegalPacmanActions( self ):
         return self.getLegalActions( 0 )
 
@@ -169,6 +172,14 @@ class GameState:
 
     def getScore( self ):
         return float(self.data.score)
+
+    def getAgent_grid(self,agent_index):
+        agent_pos = self.data.agentStates[agent_index].getPosition()
+        grid = Grid(self.data.layout.width, self.data.layout.height, False)
+        grid[int(agent_pos[0])][int(agent_pos[1])] = True
+        return grid
+
+
     def getCapsules_TF(self):
         capsules_pos = self.getCapsules()
         grid = Grid(self.data.layout.width, self.data.layout.height, False)
@@ -177,7 +188,10 @@ class GameState:
 
         return grid
 
-
+    def getWidth(self):
+        return self.data.layout.width
+    def getHeight(self):
+        return self.data.layout.height
 
 
     def getCapsules(self):
@@ -344,7 +358,10 @@ class PacmanRules:
         """
         Returns a list of possible actions.
         """
-        return Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
+        possibleActions = Actions.getPossibleActions( state.getPacmanState().configuration, state.data.layout.walls )
+        if Directions.STOP in possibleActions:
+            possibleActions.remove(Directions.STOP)
+        return possibleActions
     getLegalActions = staticmethod( getLegalActions )
 
     def applyAction( state, action ):
@@ -455,7 +472,7 @@ class GhostRules:
 
     def collide( state, ghostState, agentIndex):
         if ghostState.scaredTimer > 0:
-            state.data.scoreChange += 200
+            state.data.scoreChange += 50
             GhostRules.placeGhost(state, ghostState)
             ghostState.scaredTimer = 0
             # Added for first-person

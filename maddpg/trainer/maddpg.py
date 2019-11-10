@@ -118,6 +118,7 @@ class MADDPGAgentTrainer(AgentTrainer):
         obs_ph_n = []
         for i in range(self.n):
             obs_ph_n.append(U.BatchInput(obs_shape_n[i], name="observation"+str(i)).get())
+            #obs_ph_n.append(U.BatchInput(obs_shape_n[i], name="observation"+str(i), dtype=tf.uint8).get()) #should we specify uint8 instead of default float?
 
         # Create all the functions necessary to train the model
         self.q_train, self.q_update, self.q_debug = q_train(
