@@ -29,8 +29,8 @@
 |`--ghost_obs_type`   | Observation space for Ghost agents (default: `full_obs`, options: `partial_obs` or `full_obs`)|
 |`--partial_obs_range`| Range for partial observation space, if chosen (default: `3`) e.g. 3x3, 5x5, 7x7...|
 |`--shared_obs`       | Include same features in observation spaces of both Pac-Man and Ghost agents (default: `False`)|
-|`--astarSearch`      | Factor A* distance between Pac-Man and Ghost into reward and observation of agents (default: `False`)|
-|`--astartAlpha`      | Multiplier for penalizing/rewarding agents using increase/decrease in A* distance (default: `1`)|
+|`--astarSearch`      | Factor step distance between Pac-Man and Ghost into reward and observation of agents (default: `False`)|
+|`--astartAlpha`      | Multiplier for penalizing/rewarding agents using increase/decrease in step distance (default: `1`)|
 
 ## Authors
 - [Anuj Sanjay Patel](https://github.com/anujsp2797)
