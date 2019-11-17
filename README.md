@@ -1,5 +1,7 @@
 # Death to Pac-Man: Ghost Revolution with Multi-agent Deep Reinforcement Learning 
 
+This project focuses on using the multi-agent deep deterministic policy gradient (MADDPG) algorithm in a novel use case — training the ghosts in the game of Pac-Man to capture Pac-Man.
+
 ## Prerequisites
 1. Python 3 and higher. 
 
