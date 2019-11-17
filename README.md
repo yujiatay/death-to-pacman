@@ -27,6 +27,7 @@ This project focuses on using the multi-agent deep deterministic policy gradient
 |`--load-dir`         | Directory where training state and model are loaded from (default: `""`)|
 |`--load`             | Only loads model if this is set to `True` (default: `False`)|
 |`--load-episode`     | Loads a model tagged to a particular episode (default: `0`)|
+|`--layout`           | Selects the game map (default: `smallClassic`)|
 |`--pacman_obs_type`  | Observation space for Pac-Man agent (default: `partial_obs`, options: `partial_obs` or `full_obs`)|
 |`--ghost_obs_type`   | Observation space for Ghost agents (default: `full_obs`, options: `partial_obs` or `full_obs`)|
 |`--partial_obs_range`| Range for partial observation space, if chosen (default: `3`) e.g. 3x3, 5x5, 7x7...|
